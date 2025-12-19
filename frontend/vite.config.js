@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
     plugins: [vue()],
+    // Base path for GitHub Pages - repository name
+    base: process.env.GITHUB_ACTIONS ? '/transaction-dispute-portal/' : '/',
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
