@@ -20,8 +20,12 @@ A production-ready microservice application for managing financial transaction d
 ### Docker (Recommended)
 
 ```bash
-./build.sh
-docker compose up -d
+# First time: copy and configure environment
+cp .env.example .env
+# Edit .env and set a secure JWT_SECRET
+
+# Start
+docker compose up -d --build
 ```
 
 Open http://localhost:3000

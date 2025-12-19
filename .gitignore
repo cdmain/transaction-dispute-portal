@@ -35,9 +35,14 @@ Thumbs.db
 # .NET
 bin/
 obj/
+publish/
 *.user
 *.suo
 *.userprefs
+
+# SQLite temp files
+*.db-shm
+*.db-wal
 
 # Logs
 logs/
