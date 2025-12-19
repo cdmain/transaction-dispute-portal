@@ -1,7 +1,25 @@
-# Pre-built Dockerfile - requires local build first:
-# bun install && bun run build
+# Stage 1: Build the Vue app with Bun
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json bun.lockb* ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile || bun install
+
+# Copy source code
+COPY . .
+
+# Build the app
+RUN bun run build
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
-COPY dist /usr/share/nginx/html
+
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000

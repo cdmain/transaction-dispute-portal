@@ -6,6 +6,16 @@ A production-ready microservice application for managing financial transaction d
 [![Vue 3](https://img.shields.io/badge/Vue-3.4-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI](https://github.com/cdmain/transaction-dispute-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/cdmain/transaction-dispute-portal/actions/workflows/ci.yml)
+[![GitHub Pages](https://img.shields.io/badge/Demo-Live-brightgreen?logo=github)](https://cdmain.github.io/transaction-dispute-portal/)
+
+---
+
+## 🚀 Live Demo
+
+**[View Live Demo →](https://cdmain.github.io/transaction-dispute-portal/)**
+
+> **Note:** The live demo is a static frontend preview. For full functionality with backend APIs, run locally with Docker.
 
 ---
 
