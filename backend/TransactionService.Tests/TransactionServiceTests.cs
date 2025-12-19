@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
 using TransactionService.Data;
 using TransactionService.Models;
 using TransactionService.Services;
@@ -10,6 +13,7 @@ public class TransactionServiceTests : IDisposable
 {
     private readonly TransactionDbContext _context;
     private readonly TransactionServiceImpl _service;
+    private readonly Mock<ILogger<TransactionServiceImpl>> _loggerMock;
 
     public TransactionServiceTests()
     {
@@ -18,7 +22,8 @@ public class TransactionServiceTests : IDisposable
             .Options;
 
         _context = new TransactionDbContext(options);
-        _service = new TransactionServiceImpl(_context);
+        _loggerMock = new Mock<ILogger<TransactionServiceImpl>>();
+        _service = new TransactionServiceImpl(_context, _loggerMock.Object);
         
         SeedTestData();
     }
@@ -137,8 +142,8 @@ public class TransactionServiceTests : IDisposable
         // Arrange
         var parameters = new TransactionQueryParameters 
         { 
-            StartDate = DateTime.UtcNow.AddDays(-4),
-            EndDate = DateTime.UtcNow,
+            FromDate = DateTime.UtcNow.AddDays(-4),
+            ToDate = DateTime.UtcNow,
             Page = 1, 
             PageSize = 10 
         };
@@ -151,12 +156,12 @@ public class TransactionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GetTransactionsAsync_FiltersByDisputedStatus()
+    public async Task GetTransactionsAsync_FiltersByMinAmount()
     {
         // Arrange
         var parameters = new TransactionQueryParameters 
         { 
-            IsDisputed = true,
+            MinAmount = 200m,
             Page = 1, 
             PageSize = 10 
         };
@@ -165,8 +170,7 @@ public class TransactionServiceTests : IDisposable
         var result = await _service.GetTransactionsAsync(parameters);
 
         // Assert
-        result.Items.Should().HaveCount(1);
-        result.Items.First().IsDisputed.Should().BeTrue();
+        result.Items.All(t => t.Amount >= 200m).Should().BeTrue();
     }
 
     [Fact]

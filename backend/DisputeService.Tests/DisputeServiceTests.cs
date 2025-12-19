@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Xunit;
 using DisputeService.Data;
 using DisputeService.Models;
 using DisputeService.Services;
@@ -31,7 +32,7 @@ public class DisputeServiceTests : IDisposable
         _configMock.Setup(c => c["TransactionService:BaseUrl"]).Returns("http://localhost:5001");
         
         var httpClient = new HttpClient();
-        _service = new DisputeServiceImpl(_context, httpClient, _configMock.Object, _loggerMock.Object);
+        _service = new DisputeServiceImpl(_context, _loggerMock.Object, httpClient, _configMock.Object);
         
         SeedTestData();
     }
