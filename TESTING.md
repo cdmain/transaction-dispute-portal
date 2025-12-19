@@ -440,64 +440,87 @@ done
 
 ## CI/CD Integration
 
-A production-grade GitHub Actions workflow is available at [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml).
+GitHub Actions workflows are located in `.github/workflows/`:
+
+| Workflow | File | Purpose |
+|----------|------|---------|
+| **CI** | `ci.yml` | Build & test on every push |
+| **CD** | `cd.yml` | Deploy to dev/int/prod |
 
 ### Pipeline Overview
 
 ```
-┌─────────────┐     ┌─────────────┐
-│  Backend    │     │  Frontend   │
-│   Tests     │     │   Tests     │
-└──────┬──────┘     └──────┬──────┘
-       │                   │
-       └─────────┬─────────┘
-                 ▼
-        ┌─────────────────┐
-        │  Security Scan  │
-        │    (Trivy)      │
-        └────────┬────────┘
-                 ▼
-        ┌─────────────────┐
-        │  Build & Push   │
-        │  Docker Images  │
-        └────────┬────────┘
-                 ▼
-        ┌─────────────────┐
-        │   Deploy to     │
-        │    Staging      │
-        └────────┬────────┘
-                 ▼
-        ┌─────────────────┐
-        │   Deploy to     │
-        │   Production    │
-        └─────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    CI Pipeline (ci.yml)                       │
+│         Runs on: All branches, All PRs                        │
+├─────────────────────────┬────────────────────────────────────┤
+│      Backend Tests      │       Frontend Build               │
+│  • Restore & Build      │  • Install dependencies            │
+│  • Run unit tests       │  • Type check                      │
+│                         │  • Build                           │
+└─────────────────────────┴────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    CD Pipeline (cd.yml)                       │
+│         Runs on: develop (→DEV), main (→INT→PROD)             │
+├──────────────────────────────────────────────────────────────┤
+│                      Build Images                             │
+│  • API Gateway, Auth, Transaction, Dispute, Frontend          │
+│  • Push to GitHub Container Registry                          │
+└──────────────────────────────────────────────────────────────┘
+          │                    │                    │
+          ▼                    ▼                    ▼
+    ┌──────────┐        ┌──────────┐        ┌──────────┐
+    │   DEV    │        │   INT    │        │   PROD   │
+    │          │        │ (Staging)│   ──►  │          │
+    │ develop  │        │   main   │        │  Manual  │
+    │  branch  │        │  branch  │        │ Approval │
+    └──────────┘        └──────────┘        └──────────┘
 ```
 
-### Pipeline Features
+### Environment Strategy
 
-| Feature | Description |
-|---------|-------------|
-| **Parallel Testing** | Backend and frontend tests run simultaneously |
-| **Code Coverage** | Uploads to Codecov for tracking |
-| **Security Scanning** | Trivy scans for vulnerabilities |
-| **Docker Build Cache** | GitHub Actions cache for faster builds |
-| **Multi-environment** | Staging → Production with approval gates |
-| **Canary Deployments** | 10% traffic before full rollout |
-| **Slack Notifications** | Success/failure alerts |
+| Environment | Branch | Trigger | Approval |
+|-------------|--------|---------|----------|
+| **DEV** | `develop` | Automatic on push | None |
+| **INT** (Staging) | `main` | Automatic on push | None |
+| **PROD** | `main` | After INT succeeds | **Required** |
 
-### Required Secrets
+### Branching Strategy (GitFlow)
 
-| Secret | Purpose |
-|--------|---------|
-| `CODECOV_TOKEN` | Code coverage reporting |
-| `KUBE_CONFIG_STAGING` | Kubernetes access for staging |
-| `KUBE_CONFIG_PRODUCTION` | Kubernetes access for production |
-| `SLACK_WEBHOOK` | Deployment notifications |
+```
+main ─────●─────────●─────────●───────── (production-ready)
+          │         ↑         ↑
+          │         │         │
+develop ──●────●────●────●────●───────── (integration)
+               │         │
+               │         │
+feature/* ─────●─────────●─────────────── (feature work)
+```
 
-### Trigger Rules
+### Required GitHub Setup
 
-| Branch | Tests | Build | Deploy Staging | Deploy Prod |
-|--------|-------|-------|----------------|-------------|
+1. **Create Environments** (Settings → Environments):
+   - `dev` - No protection rules
+   - `int` - No protection rules  
+   - `prod` - Add **required reviewers**
+
+2. **Add Secrets** (Settings → Secrets):
+
+| Secret | Environment | Purpose |
+|--------|-------------|---------|
+| `KUBE_CONFIG_DEV` | dev | Kubernetes access |
+| `KUBE_CONFIG_INT` | int | Kubernetes access |
+| `KUBE_CONFIG_PROD` | prod | Kubernetes access |
+
+### Manual Deployment
+
+Trigger deployment manually via **Actions → CD → Run workflow**:
+
+```
+Select environment: [dev | int | prod]
+```
 | `main` | ✅ | ✅ | ✅ | ✅ (manual approval) |
 | `develop` | ✅ | ❌ | ❌ | ❌ |
 | PR to `main` | ✅ | ❌ | ❌ | ❌ |
