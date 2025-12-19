@@ -137,26 +137,34 @@ docker compose down
 
 ### Local Development
 
-**Start all services:**
-```bash
-./start-local.sh
-```
+For development without Docker, use the helper scripts:
 
-**Stop all services:**
 ```bash
+# Start all services (runs in background)
+./start-local.sh
+
+# Stop all services
 ./stop-local.sh
 ```
 
-**Or run individually:**
+> **Note:** Local development uses SQLite databases created in each service directory.
+
+**Or run services individually** (useful for debugging):
 
 ```bash
-# Backend (separate terminals)
+# Terminal 1: Auth Service
 cd backend/AuthService && dotnet run
+
+# Terminal 2: Transaction Service
 cd backend/TransactionService && dotnet run
+
+# Terminal 3: Dispute Service
 cd backend/DisputeService && dotnet run
+
+# Terminal 4: API Gateway
 cd backend/ApiGateway && dotnet run
 
-# Frontend
+# Terminal 5: Frontend
 cd frontend && bun install && bun dev
 ```
 
