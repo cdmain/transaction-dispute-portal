@@ -43,7 +43,7 @@ jobs:
         working-directory: ./frontend
         run: bun run build
         env:
-          VITE_API_BASE_URL: https://api.example.com  # Replace with your API URL
+          VITE_DEMO_MODE: 'true'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

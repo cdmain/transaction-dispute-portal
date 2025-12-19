@@ -1,14 +1,26 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { useLogin } from '@/composables/useAuth'
+import { isDemoMode, DEMO_CREDENTIALS } from '@/services/mockApi'
 
 const router = useRouter()
 const login = useLogin()
 
-const DEMO_EMAIL = 'demo@example.com'
-const DEMO_PASSWORD = 'Demo123!'
+const DEMO_EMAIL = DEMO_CREDENTIALS.email
+const DEMO_PASSWORD = DEMO_CREDENTIALS.password
+
+const isDemo = ref(false)
+
+onMounted(() => {
+  isDemo.value = isDemoMode()
+  // Auto-fill demo credentials in demo mode
+  if (isDemo.value) {
+    form.value.email = DEMO_EMAIL
+    form.value.password = DEMO_PASSWORD
+  }
+})
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -76,6 +88,23 @@ const errorMessage = computed(() => {
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
+      <!-- Demo Mode Banner -->
+      <div v-if="isDemo" class="rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white shadow-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              🎮 Demo Mode
+            </h3>
+            <p class="text-sm text-blue-100 mt-1">
+              This is a live demo with mock data. Credentials are pre-filled!
+            </p>
+          </div>
+          <div class="text-right text-sm">
+            <p class="font-mono bg-white/20 rounded px-2 py-1">{{ DEMO_EMAIL }}</p>
+          </div>
+        </div>
+      </div>
+
       <div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Transaction Dispute Portal
