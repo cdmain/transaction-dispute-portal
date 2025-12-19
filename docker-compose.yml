@@ -1,0 +1,153 @@
+# Transaction Dispute Portal - Docker Compose
+# Usage: docker compose up -d
+
+services:
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - dispute-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/AuthService
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "5003:5003"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/data/auth.db
+      - Jwt__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - Jwt__Issuer=DisputePortal
+      - Jwt__Audience=DisputePortalUsers
+    volumes:
+      - auth-data:/data
+    networks:
+      - dispute-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Transaction Service
+  transaction-service:
+    build:
+      context: ./backend/TransactionService
+      dockerfile: Dockerfile
+    container_name: transaction-service
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/data/transactions.db
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - Jwt__Issuer=DisputePortal
+      - Jwt__Audience=DisputePortalUsers
+    volumes:
+      - transaction-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dispute-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Dispute Service
+  dispute-service:
+    build:
+      context: ./backend/DisputeService
+      dockerfile: Dockerfile
+    container_name: dispute-service
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Data Source=/data/disputes.db
+      - ConnectionStrings__Redis=redis:6379
+      - TransactionService__BaseUrl=http://transaction-service:5001
+      - Jwt__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - Jwt__Issuer=DisputePortal
+      - Jwt__Audience=DisputePortalUsers
+    volumes:
+      - dispute-data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+      transaction-service:
+        condition: service_started
+    networks:
+      - dispute-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./backend/ApiGateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ReverseProxy__Clusters__transaction-service__Destinations__destination1__Address=http://transaction-service:5001
+      - ReverseProxy__Clusters__dispute-service__Destinations__destination1__Address=http://dispute-service:5002
+      - ReverseProxy__Clusters__auth-service__Destinations__destination1__Address=http://auth-service:5003
+    depends_on:
+      - auth-service
+      - transaction-service
+      - dispute-service
+    networks:
+      - dispute-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - dispute-network
+
+networks:
+  dispute-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+
+volumes:
+  auth-data:
+  transaction-data:
+  dispute-data:
