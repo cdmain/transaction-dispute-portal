@@ -5,12 +5,12 @@
 # DEPLOYMENT STRATEGY:
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  Branch: dev                                                                 │
-# │  ├── Push → Builds all envs, deploys ALL to GitHub Pages                   │
-# │  └── Updates DEV and INT environments                                       │
+# │  └── Push → Runs CI tests only (no deployment)                              │
 # │                                                                              │
 # │  Branch: main (production tracking for rollbacks)                            │
-# │  ├── Push → Builds all envs, deploys ALL to GitHub Pages                   │
-# │  └── Updates QA and PROD environments                                       │
+# │  └── Push → Builds and deploys ALL environments to GitHub Pages             │
+# │                                                                              │
+# │  FLOW: dev → PR → main → Deploy ALL environments                             │
 # └─────────────────────────────────────────────────────────────────────────────┘
 #
 # ENVIRONMENTS (all deployed together as subfolders):
@@ -32,7 +32,7 @@ name: Deploy
 
 on:
   push:
-    branches: [dev, main]
+    branches: [main]
   workflow_dispatch:
     inputs:
       force_deploy:
