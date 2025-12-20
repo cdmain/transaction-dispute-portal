@@ -1,0 +1,365 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Multi-Environment Deployment Pipeline
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# DEPLOYMENT STRATEGY:
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  Branch: dev                                                                 │
+# │  ├── Push → DEV environment (auto-deploy)                                   │
+# │  └── Approval → INT environment                                             │
+# │                                                                              │
+# │  Branch: release                                                             │
+# │  ├── Push → QA environment (auto-deploy)                                    │
+# │  └── Approval → PROD environment                                            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+# ENVIRONMENTS:
+# • DEV  - https://cdmain.github.io/transaction-dispute-portal/dev/
+# • INT  - https://cdmain.github.io/transaction-dispute-portal/int/
+# • QA   - https://cdmain.github.io/transaction-dispute-portal/qa/
+# • PROD - https://cdmain.github.io/transaction-dispute-portal/
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Deploy
+
+on:
+  push:
+    branches: [dev, release]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - int
+          - qa
+          - prod
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: false
+
+env:
+  BUN_VERSION: 'latest'
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Build Frontend for All Environments
+  # ─────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Version
+        id: version
+        run: |
+          VERSION=$(cat VERSION 2>/dev/null || echo "1.0.0")
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          echo "version=${VERSION}-${COMMIT_SHORT}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}-${COMMIT_SHORT}"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile || bun install
+
+      - name: Build for DEV
+        working-directory: frontend
+        run: bun run build
+        env:
+          VITE_DEMO_MODE: 'true'
+          VITE_ENVIRONMENT: 'dev'
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Move DEV build
+        run: |
+          mkdir -p dist/dev
+          cp -r frontend/dist/* dist/dev/
+
+      - name: Build for INT
+        working-directory: frontend
+        run: bun run build
+        env:
+          VITE_DEMO_MODE: 'true'
+          VITE_ENVIRONMENT: 'int'
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Move INT build
+        run: |
+          mkdir -p dist/int
+          cp -r frontend/dist/* dist/int/
+
+      - name: Build for QA
+        working-directory: frontend
+        run: bun run build
+        env:
+          VITE_DEMO_MODE: 'true'
+          VITE_ENVIRONMENT: 'qa'
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Move QA build
+        run: |
+          mkdir -p dist/qa
+          cp -r frontend/dist/* dist/qa/
+
+      - name: Build for PROD
+        working-directory: frontend
+        run: bun run build
+        env:
+          VITE_DEMO_MODE: 'true'
+          VITE_ENVIRONMENT: 'prod'
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
+
+      - name: Move PROD build (root)
+        run: |
+          cp -r frontend/dist/* dist/
+
+      - name: Create index redirect
+        run: |
+          cat > dist/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Transaction Dispute Portal</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+              .container { text-align: center; color: white; padding: 2rem; }
+              h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+              .subtitle { opacity: 0.8; margin-bottom: 2rem; }
+              .environments { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 500px; margin: 0 auto; }
+              .env-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 12px; padding: 1.5rem; text-decoration: none; color: white; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.2); }
+              .env-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+              .env-name { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+              .env-desc { font-size: 0.875rem; opacity: 0.7; }
+              .badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-top: 0.5rem; }
+              .badge-dev { background: #22c55e; }
+              .badge-int { background: #3b82f6; }
+              .badge-qa { background: #f59e0b; }
+              .badge-prod { background: #ef4444; }
+              .version { margin-top: 2rem; opacity: 0.6; font-size: 0.875rem; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🏦 Transaction Dispute Portal</h1>
+              <p class="subtitle">Select an environment to access</p>
+              <div class="environments">
+                <a href="./dev/" class="env-card">
+                  <div class="env-name">Development</div>
+                  <div class="env-desc">Latest features</div>
+                  <span class="badge badge-dev">DEV</span>
+                </a>
+                <a href="./int/" class="env-card">
+                  <div class="env-name">Integration</div>
+                  <div class="env-desc">Integration testing</div>
+                  <span class="badge badge-int">INT</span>
+                </a>
+                <a href="./qa/" class="env-card">
+                  <div class="env-name">Quality Assurance</div>
+                  <div class="env-desc">Pre-release testing</div>
+                  <span class="badge badge-qa">QA</span>
+                </a>
+                <a href="./prod/" class="env-card">
+                  <div class="env-name">Production</div>
+                  <div class="env-desc">Stable release</div>
+                  <span class="badge badge-prod">PROD</span>
+                </a>
+              </div>
+              <p class="version">Demo Mode • Mock Data</p>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Create .nojekyll
+        run: touch dist/.nojekyll
+
+      - name: Upload full artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-environments
+          path: dist/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # DEV Environment - Auto-deploy from dev branch
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-dev:
+    name: Deploy to DEV
+    needs: build
+    if: github.ref == 'refs/heads/dev' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: https://cdmain.github.io/transaction-dispute-portal/dev/
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-environments
+          path: dist
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 DEV Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Development" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://cdmain.github.io/transaction-dispute-portal/dev/" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # INT Environment - Requires approval after DEV
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-int:
+    name: Deploy to INT
+    needs: [build, deploy-dev]
+    if: github.ref == 'refs/heads/dev' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'int')
+    runs-on: ubuntu-latest
+    environment:
+      name: int
+      url: https://cdmain.github.io/transaction-dispute-portal/int/
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-environments
+          path: dist
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 INT Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Integration" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://cdmain.github.io/transaction-dispute-portal/int/" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # QA Environment - Auto-deploy from release branch
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-qa:
+    name: Deploy to QA
+    needs: build
+    if: github.ref == 'refs/heads/release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'qa')
+    runs-on: ubuntu-latest
+    environment:
+      name: qa
+      url: https://cdmain.github.io/transaction-dispute-portal/qa/
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-environments
+          path: dist
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 QA Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Quality Assurance" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://cdmain.github.io/transaction-dispute-portal/qa/" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PROD Environment - Requires approval after QA
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-prod:
+    name: Deploy to PROD
+    needs: [build, deploy-qa]
+    if: github.ref == 'refs/heads/release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod')
+    runs-on: ubuntu-latest
+    environment:
+      name: prod
+      url: https://cdmain.github.io/transaction-dispute-portal/
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-environments
+          path: dist
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 PROD Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://cdmain.github.io/transaction-dispute-portal/" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎉 All Environments" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | URL |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------|-----|" >> $GITHUB_STEP_SUMMARY
+          echo "| DEV | [/dev/](https://cdmain.github.io/transaction-dispute-portal/dev/) |" >> $GITHUB_STEP_SUMMARY
+          echo "| INT | [/int/](https://cdmain.github.io/transaction-dispute-portal/int/) |" >> $GITHUB_STEP_SUMMARY
+          echo "| QA | [/qa/](https://cdmain.github.io/transaction-dispute-portal/qa/) |" >> $GITHUB_STEP_SUMMARY
+          echo "| PROD | [/](https://cdmain.github.io/transaction-dispute-portal/) |" >> $GITHUB_STEP_SUMMARY

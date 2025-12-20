@@ -1,0 +1,154 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Version Bump Workflow
+# Automatically updates version based on conventional commits
+# ══════════════════════════════════════════════════════════════════════════════
+name: Version
+
+on:
+  push:
+    branches: [release]
+    paths-ignore:
+      - 'VERSION'
+      - 'CHANGELOG.md'
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get current version
+        id: current
+        run: |
+          VERSION=$(cat VERSION 2>/dev/null || echo "1.0.0")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📌 Current version: ${VERSION}"
+
+      - name: Determine bump type
+        id: bump_type
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+          else
+            # Analyze commit messages for conventional commits
+            COMMITS=$(git log --oneline $(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD~10")..HEAD 2>/dev/null || git log --oneline -10)
+            
+            if echo "$COMMITS" | grep -qiE "^[a-f0-9]+ (feat|feature)(\(.+\))?!:"; then
+              BUMP_TYPE="major"
+            elif echo "$COMMITS" | grep -qiE "BREAKING CHANGE"; then
+              BUMP_TYPE="major"
+            elif echo "$COMMITS" | grep -qiE "^[a-f0-9]+ (feat|feature)"; then
+              BUMP_TYPE="minor"
+            else
+              BUMP_TYPE="patch"
+            fi
+          fi
+          echo "type=${BUMP_TYPE}" >> $GITHUB_OUTPUT
+          echo "📦 Bump type: ${BUMP_TYPE}"
+
+      - name: Calculate new version
+        id: new
+        run: |
+          VERSION="${{ steps.current.outputs.version }}"
+          BUMP_TYPE="${{ steps.bump_type.outputs.type }}"
+          
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          
+          case $BUMP_TYPE in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "🚀 New version: ${NEW_VERSION}"
+
+      - name: Update VERSION file
+        run: |
+          echo "${{ steps.new.outputs.version }}" > VERSION
+
+      - name: Update frontend package.json
+        run: |
+          cd frontend
+          npm version ${{ steps.new.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Generate Changelog Entry
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          DATE=$(date +%Y-%m-%d)
+          
+          # Create changelog entry
+          ENTRY="## [${NEW_VERSION}] - ${DATE}\n\n"
+          
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" ${LAST_TAG}..HEAD)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" -20)
+          fi
+          
+          ENTRY="${ENTRY}${COMMITS}\n\n"
+          
+          # Prepend to CHANGELOG.md
+          if [ -f CHANGELOG.md ]; then
+            echo -e "${ENTRY}$(cat CHANGELOG.md)" > CHANGELOG.md
+          else
+            echo -e "# Changelog\n\n${ENTRY}" > CHANGELOG.md
+          fi
+
+      - name: Commit version bump
+        run: |
+          git add VERSION frontend/package.json CHANGELOG.md
+          git commit -m "chore(release): bump version to ${{ steps.new.outputs.version }}"
+          git push
+
+      - name: Create Git tag
+        run: |
+          git tag -a "v${{ steps.new.outputs.version }}" -m "Release v${{ steps.new.outputs.version }}"
+          git push origin "v${{ steps.new.outputs.version }}"
+
+      - name: Summary
+        run: |
+          echo "## 🏷️ Version Bump Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Previous Version | ${{ steps.current.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| New Version | ${{ steps.new.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bump Type | ${{ steps.bump_type.outputs.type }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag | v${{ steps.new.outputs.version }} |" >> $GITHUB_STEP_SUMMARY

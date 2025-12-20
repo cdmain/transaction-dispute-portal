@@ -7,19 +7,25 @@ A production-ready microservice application for managing financial transaction d
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![CI](https://github.com/cdmain/transaction-dispute-portal/actions/workflows/ci.yml/badge.svg)](https://github.com/cdmain/transaction-dispute-portal/actions/workflows/ci.yml)
-[![GitHub Pages](https://img.shields.io/badge/Demo-Live-brightgreen?logo=github)](https://cdmain.github.io/transaction-dispute-portal/)
+[![Deploy](https://github.com/cdmain/transaction-dispute-portal/actions/workflows/deploy.yml/badge.svg)](https://github.com/cdmain/transaction-dispute-portal/actions/workflows/deploy.yml)
+[![Version](https://img.shields.io/github/v/tag/cdmain/transaction-dispute-portal?label=version)](https://github.com/cdmain/transaction-dispute-portal/tags)
 
 ---
 
-## 🚀 Live Demo
+## 🌍 Live Environments
 
-**[View Live Demo →](https://cdmain.github.io/transaction-dispute-portal/)**
+| Environment | URL | Branch | Status |
+|-------------|-----|--------|--------|
+| **DEV** | [🔗 /dev/](https://cdmain.github.io/transaction-dispute-portal/dev/) | `dev` | Latest features |
+| **INT** | [🔗 /int/](https://cdmain.github.io/transaction-dispute-portal/int/) | `dev` | Integration testing |
+| **QA** | [🔗 /qa/](https://cdmain.github.io/transaction-dispute-portal/qa/) | `release` | Pre-release testing |
+| **PROD** | [🔗 /](https://cdmain.github.io/transaction-dispute-portal/) | `release` | Stable release |
 
-> **Note:** The live demo is a static frontend preview. For full functionality with backend APIs, run locally with Docker.
+> **Demo Mode:** All environments use mock data. Use `demo@example.com` / `Demo123!` to sign in.
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Demo Credentials
 
@@ -30,11 +36,14 @@ A production-ready microservice application for managing financial transaction d
 ### Docker (Recommended)
 
 ```bash
-# First time: copy and configure environment
-cp .env.example .env
-# Edit .env and set a secure JWT_SECRET
+# Clone the repository
+git clone https://github.com/cdmain/transaction-dispute-portal.git
+cd transaction-dispute-portal
 
-# Start
+# Copy environment file
+cp .env.example .env
+
+# Start all services
 docker compose up -d --build
 ```
 
@@ -48,16 +57,18 @@ docker compose down
 
 ---
 
-## Documentation
+## 📖 Documentation
 
 | Document | Description |
 |----------|-------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System design, error handling, validation, security |
 | [TESTING.md](TESTING.md) | Unit tests, integration tests, manual testing |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines, branch strategy, code standards |
+| [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -87,28 +98,89 @@ docker compose down
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
+├── .github/
+│   └── workflows/           # CI/CD pipelines
+│       ├── ci.yml           # Continuous Integration
+│       ├── deploy.yml       # Multi-environment deployment
+│       └── version.yml      # Semantic versioning
 ├── backend/
-│   ├── ApiGateway/              # YARP reverse proxy
-│   ├── AuthService/             # JWT authentication
-│   ├── TransactionService/      # Transaction CRUD
-│   ├── DisputeService/          # Dispute management
-│   └── *Service.Tests/          # Unit tests
+│   ├── ApiGateway/          # YARP reverse proxy
+│   ├── AuthService/         # JWT authentication
+│   ├── TransactionService/  # Transaction CRUD
+│   ├── DisputeService/      # Dispute management
+│   └── *Service.Tests/      # Unit tests (42 total)
 ├── frontend/
 │   ├── src/
-│   │   ├── views/               # Page components
-│   │   ├── composables/         # TanStack Query hooks
-│   │   ├── schemas/             # Zod validation
-│   │   └── api/                 # Axios client
-├── k8s/                         # Kubernetes manifests
+│   │   ├── views/           # Page components
+│   │   ├── composables/     # TanStack Query hooks
+│   │   ├── schemas/         # Zod validation
+│   │   └── services/        # API client + mock data
+├── k8s/                     # Kubernetes manifests
+├── VERSION                  # Semantic version file
 └── docker-compose.yml
 ```
 
 ---
 
-## API Endpoints
+## 🔄 Deployment Pipeline
+
+### Branch Strategy
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  dev branch                         release branch              │
+│  ─────────                          ──────────────              │
+│                                                                 │
+│  feature/* ──┬──▶ dev ──▶ DEV ──▶ INT      QA ──▶ PROD         │
+│  bugfix/*  ──┘         (auto)  (approval)  (auto)  (approval)  │
+│                            │                  │                 │
+│                            └──── PR merge ────┘                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Environment Promotion
+
+| From | To | Trigger | Approval |
+|------|-----|---------|----------|
+| Push to `dev` | DEV | Automatic | No |
+| DEV | INT | Automatic | **Yes** |
+| Push to `release` | QA | Automatic | No |
+| QA | PROD | Automatic | **Yes** |
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details on:
+
+- 🌿 **Branch Strategy** - Feature branches, naming conventions
+- 📝 **Commit Guidelines** - Conventional commits format
+- 🔀 **Pull Request Process** - Review requirements, CI checks
+- 🎨 **Code Standards** - .NET and Vue.js style guides
+- 🧪 **Testing Requirements** - Unit test coverage
+
+### Quick Contribution Steps
+
+```bash
+# 1. Fork and clone
+git clone https://github.com/YOUR_USERNAME/transaction-dispute-portal.git
+
+# 2. Create feature branch from dev
+git checkout -b feature/your-feature dev
+
+# 3. Make changes and commit
+git commit -m "feat(scope): add new feature"
+
+# 4. Push and create PR to dev branch
+git push origin feature/your-feature
+```
+
+---
+
+## 🔌 API Endpoints
 
 ### Authentication
 
@@ -123,82 +195,67 @@ docker compose down
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/transactions` | List transactions |
-| GET | `/api/transactions/{id}` | Get transaction |
+| GET | `/api/transactions` | List transactions (paginated) |
+| GET | `/api/transactions/{id}` | Get transaction by ID |
 
 ### Disputes
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/disputes` | List disputes |
+| GET | `/api/disputes` | List disputes (paginated) |
 | POST | `/api/disputes` | Create dispute |
 | PUT | `/api/disputes/{id}/status` | Update status |
 | POST | `/api/disputes/{id}/cancel` | Cancel dispute |
+| GET | `/api/disputes/statistics` | Get dispute statistics |
 
 ---
 
-## Development
+## 🛠️ Development
 
 ### Prerequisites
 
-- .NET 8 SDK
-- Node.js 18+ or Bun
-- Docker (optional)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Bun](https://bun.sh/) (or Node.js 18+)
+- [Docker](https://www.docker.com/) (optional)
 
 ### Local Development
 
-For development without Docker, use the helper scripts:
-
 ```bash
-# Start all services (runs in background)
+# Start all services
 ./start-local.sh
 
 # Stop all services
 ./stop-local.sh
 ```
 
-> **Note:** Local development uses SQLite databases created in each service directory.
-
-**Or run services individually** (useful for debugging):
-
-```bash
-# Terminal 1: Auth Service
-cd backend/AuthService && dotnet run
-
-# Terminal 2: Transaction Service
-cd backend/TransactionService && dotnet run
-
-# Terminal 3: Dispute Service
-cd backend/DisputeService && dotnet run
-
-# Terminal 4: API Gateway
-cd backend/ApiGateway && dotnet run
-
-# Terminal 5: Frontend
-cd frontend && bun install && bun dev
-```
-
 ### Run Tests
 
 ```bash
+# Backend (42 unit tests)
 cd backend && dotnet test
+
+# Frontend type check
+cd frontend && bun run type-check
 ```
 
 ---
 
-## Kubernetes
+## 🏷️ Versioning
 
-```bash
-# Deploy
-kubectl apply -f k8s/
+This project follows [Semantic Versioning](https://semver.org/):
 
-# Remove
-kubectl delete -f k8s/
-```
+- **MAJOR**: Breaking changes
+- **MINOR**: New features (backwards compatible)
+- **PATCH**: Bug fixes (backwards compatible)
+
+Version is automatically bumped when merging to `release` branch based on commit messages:
+- `feat!:` or `BREAKING CHANGE` → Major
+- `feat:` → Minor
+- `fix:`, `docs:`, etc. → Patch
 
 ---
 
-## Tech Stack
+## 🧰 Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -208,9 +265,20 @@ kubectl delete -f k8s/
 | Auth | JWT, BCrypt |
 | Cache | Redis |
 | Testing | xUnit, Moq, FluentAssertions |
+| CI/CD | GitHub Actions |
+| Hosting | GitHub Pages (demo) |
 
 ---
 
-## License
+## 📜 License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [Vue.js](https://vuejs.org/)
+- Backend powered by [.NET 8](https://dotnet.microsoft.com/)
+- Icons from [Heroicons](https://heroicons.com/)
+- UI components from [Headless UI](https://headlessui.com/)

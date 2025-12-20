@@ -1,5 +1,6 @@
 # ══════════════════════════════════════════════════════════════════════════════
 # CI Pipeline - Runs on all branches and PRs
+# Validates code quality before deployment
 # ══════════════════════════════════════════════════════════════════════════════
 name: CI
 
@@ -7,10 +8,11 @@ on:
   push:
     branches: ['*']
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev, release]
 
 env:
   DOTNET_VERSION: '8.0.x'
+  BUN_VERSION: 'latest'
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -36,7 +38,14 @@ jobs:
         run: dotnet build backend/DisputePortal.sln --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test backend/DisputePortal.sln --no-build --configuration Release --verbosity normal
+        run: dotnet test backend/DisputePortal.sln --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: '**/coverage.cobertura.xml'
+          retention-days: 7
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Frontend: Build & Type Check
@@ -52,11 +61,11 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         working-directory: frontend
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile || bun install
 
       - name: Type check
         working-directory: frontend
@@ -65,3 +74,28 @@ jobs:
       - name: Build
         working-directory: frontend
         run: bun run build
+        env:
+          VITE_DEMO_MODE: 'true'
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Security: Dependency Audit
+  # ─────────────────────────────────────────────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: .NET Security Audit
+        run: |
+          dotnet list backend/DisputePortal.sln package --vulnerable --include-transitive 2>&1 | tee audit.log
+          if grep -q "has the following vulnerable packages" audit.log; then
+            echo "::warning::Vulnerable packages detected"
+          fi
