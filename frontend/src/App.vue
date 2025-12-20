@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
     <!-- Environment Banner -->
     <div v-if="isDemo && showNavbar" :class="envBannerClass">
       <div class="flex items-center justify-center gap-4 text-sm">
