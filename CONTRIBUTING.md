@@ -97,10 +97,13 @@ By participating in this project, you agree to maintain a respectful and inclusi
 │      └── git push origin feature/your-feature                   │
 │                                                                  │
 │   4. After review, merge to 'dev'                               │
-│      └── Deploys to DEV → INT (with approval)                   │
+│      └── Deploys to DEV + INT                                   │
 │                                                                  │
-│   5. Create PR from 'dev' to 'release'                          │
-│      └── Deploys to QA → PROD (with approval)                   │
+│   5. Create PR from 'dev' to 'main'                             │
+│      └── Deploys to QA + PROD                                   │
+│                                                                  │
+│   6. Rollback (if needed)                                       │
+│      └── git revert + push to main                              │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -111,11 +114,13 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 | Branch | Purpose | Deploys To | Protection |
 |--------|---------|------------|------------|
+| `main` | Production releases | QA, PROD | Requires PR + approval |
 | `dev` | Active development | DEV, INT | Requires PR |
-| `release` | Release candidates | QA, PROD | Requires PR + approval |
 | `feature/*` | New features | - | - |
 | `bugfix/*` | Bug fixes | - | - |
 | `hotfix/*` | Production fixes | - | - |
+
+> 💡 **Rollback Strategy**: The `main` branch tracks all production changes. To rollback, simply `git revert` the problematic commit and push to `main`.
 
 ### Branch Naming Conventions
 

@@ -18,8 +18,8 @@ A production-ready microservice application for managing financial transaction d
 |-------------|-----|--------|--------|
 | **DEV** | [🔗 /dev/](https://cdmain.github.io/transaction-dispute-portal/dev/) | `dev` | Latest features |
 | **INT** | [🔗 /int/](https://cdmain.github.io/transaction-dispute-portal/int/) | `dev` | Integration testing |
-| **QA** | [🔗 /qa/](https://cdmain.github.io/transaction-dispute-portal/qa/) | `release` | Pre-release testing |
-| **PROD** | [🔗 /](https://cdmain.github.io/transaction-dispute-portal/) | `release` | Stable release |
+| **QA** | [🔗 /qa/](https://cdmain.github.io/transaction-dispute-portal/qa/) | `main` | Pre-release testing |
+| **PROD** | [🔗 /prod/](https://cdmain.github.io/transaction-dispute-portal/prod/) | `main` | Stable release |
 
 > **Demo Mode:** All environments use mock data. Use `demo@example.com` / `Demo123!` to sign in.
 
@@ -130,25 +130,27 @@ docker compose down
 ### Branch Strategy
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  dev branch                         release branch              │
-│  ─────────                          ──────────────              │
-│                                                                 │
-│  feature/* ──┬──▶ dev ──▶ DEV ──▶ INT      QA ──▶ PROD         │
-│  bugfix/*  ──┘         (auto)  (approval)  (auto)  (approval)  │
-│                            │                  │                 │
-│                            └──── PR merge ────┘                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  feature/* ──┬──▶ dev ──────────▶ DEV/INT (development testing)            │
+│  bugfix/*  ──┘        (push)          │                                     │
+│                                       │                                     │
+│                                       ▼ (PR to main)                        │
+│                                                                             │
+│                     main ──────────▶ QA/PROD (production tracking)         │
+│                           (push)                                            │
+│                                                                             │
+│  🔄 Rollback: main branch tracks all production changes                    │
+│               git revert + push to main redeploys                           │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Environment Promotion
 
-| From | To | Trigger | Approval |
-|------|-----|---------|----------|
-| Push to `dev` | DEV | Automatic | No |
-| DEV | INT | Automatic | **Yes** |
-| Push to `release` | QA | Automatic | No |
-| QA | PROD | Automatic | **Yes** |
+| Branch | Deploys To | Purpose |
+|--------|------------|----------|
+| `dev` | DEV + INT | Development & integration testing |
+| `main` | QA + PROD | Production releases (rollback tracking) |
 
 ---
 
