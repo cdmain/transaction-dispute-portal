@@ -5,6 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using AuthService.Data;
 using AuthService.Services;
+using Shared.Infrastructure.Middleware;
+using Shared.Infrastructure.HealthChecks;
+using Shared.Infrastructure.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,6 +84,11 @@ builder.Services.AddAuthentication(options =>
 // Register services
 builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
 
+// Add production infrastructure
+builder.Services.AddGlobalExceptionHandler();
+builder.Services.AddApiRateLimiting();
+builder.Services.AddServiceHealthChecks<AuthDbContext>("AuthService");
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {
@@ -95,6 +103,10 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+app.UseExceptionHandler();
+app.UseCorrelationId();
+app.UseRateLimiter();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -103,8 +115,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Health check endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "auth-service" }));
+// Map health check endpoints
+app.MapServiceHealthChecks();
 
 // Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())

@@ -5,6 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using DisputeService.Data;
 using DisputeService.Services;
+using Shared.Infrastructure.Middleware;
+using Shared.Infrastructure.HealthChecks;
+using Shared.Infrastructure.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,6 +99,11 @@ builder.Services.AddAuthentication(options =>
 // Register HttpClient for inter-service communication
 builder.Services.AddHttpClient<IDisputeService, DisputeServiceImpl>();
 
+// Add production infrastructure
+builder.Services.AddGlobalExceptionHandler();
+builder.Services.AddApiRateLimiting();
+builder.Services.AddServiceHealthChecks<DisputeDbContext>("DisputeService");
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {
@@ -110,6 +118,10 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+app.UseExceptionHandler();
+app.UseCorrelationId();
+app.UseRateLimiter();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -118,8 +130,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Health check endpoint
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "dispute-service" }));
+// Map health check endpoints
+app.MapServiceHealthChecks();
 
 // Ensure database is created
 using (var scope = app.Services.CreateScope())
