@@ -1,10 +1,16 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY *.csproj .
-RUN dotnet restore
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
+
+# Copy project files for restore
+COPY ApiGateway/*.csproj ./ApiGateway/
+COPY Shared.Infrastructure/*.csproj ./Shared.Infrastructure/
+RUN dotnet restore ./ApiGateway/ApiGateway.csproj
+
+# Copy source and publish
+COPY ApiGateway/. ./ApiGateway/
+COPY Shared.Infrastructure/. ./Shared.Infrastructure/
+RUN dotnet publish ./ApiGateway/ApiGateway.csproj -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0

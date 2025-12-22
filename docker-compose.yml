@@ -19,8 +19,8 @@ services:
   # Auth Service
   auth-service:
     build:
-      context: ./backend/AuthService
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: AuthService/Dockerfile
     container_name: auth-service
     ports:
       - "5003:5003"
@@ -44,8 +44,8 @@ services:
   # Transaction Service
   transaction-service:
     build:
-      context: ./backend/TransactionService
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: TransactionService/Dockerfile
     container_name: transaction-service
     ports:
       - "5001:5001"
@@ -73,8 +73,8 @@ services:
   # Dispute Service
   dispute-service:
     build:
-      context: ./backend/DisputeService
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: DisputeService/Dockerfile
     container_name: dispute-service
     ports:
       - "5002:5002"
@@ -105,8 +105,8 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ./backend/ApiGateway
-      dockerfile: Dockerfile
+      context: ./backend
+      dockerfile: ApiGateway/Dockerfile
     container_name: api-gateway
     ports:
       - "5000:5000"

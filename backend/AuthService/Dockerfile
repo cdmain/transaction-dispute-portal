@@ -1,10 +1,16 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY *.csproj .
-RUN dotnet restore
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
+
+# Copy project files for restore
+COPY AuthService/*.csproj ./AuthService/
+COPY Shared.Infrastructure/*.csproj ./Shared.Infrastructure/
+RUN dotnet restore ./AuthService/AuthService.csproj
+
+# Copy source and publish
+COPY AuthService/. ./AuthService/
+COPY Shared.Infrastructure/. ./Shared.Infrastructure/
+RUN dotnet publish ./AuthService/AuthService.csproj -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
