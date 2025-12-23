@@ -1,8 +1,5 @@
 # Transaction Dispute Portal - Docker Compose
 # Usage: docker compose up -d
-#
-# Images are pre-built and hosted on GitHub Container Registry.
-# No local build required - just pull and run!
 
 services:
   # Redis Cache
@@ -21,7 +18,9 @@ services:
 
   # Auth Service
   auth-service:
-    image: ghcr.io/cdmain/transaction-dispute-portal/auth-service:latest
+    build:
+      context: ./backend
+      dockerfile: AuthService/Dockerfile
     container_name: auth-service
     ports:
       - "5003:5003"
@@ -44,7 +43,9 @@ services:
 
   # Transaction Service
   transaction-service:
-    image: ghcr.io/cdmain/transaction-dispute-portal/transaction-service:latest
+    build:
+      context: ./backend
+      dockerfile: TransactionService/Dockerfile
     container_name: transaction-service
     ports:
       - "5001:5001"
@@ -71,7 +72,9 @@ services:
 
   # Dispute Service
   dispute-service:
-    image: ghcr.io/cdmain/transaction-dispute-portal/dispute-service:latest
+    build:
+      context: ./backend
+      dockerfile: DisputeService/Dockerfile
     container_name: dispute-service
     ports:
       - "5002:5002"
@@ -101,7 +104,9 @@ services:
 
   # API Gateway
   api-gateway:
-    image: ghcr.io/cdmain/transaction-dispute-portal/api-gateway:latest
+    build:
+      context: ./backend
+      dockerfile: ApiGateway/Dockerfile
     container_name: api-gateway
     ports:
       - "5000:5000"
@@ -125,7 +130,9 @@ services:
 
   # Frontend
   frontend:
-    image: ghcr.io/cdmain/transaction-dispute-portal/frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "3000:3000"
