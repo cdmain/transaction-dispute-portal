@@ -23,20 +23,29 @@ body {
   min-height: 100vh;
 }
 
-/* Smooth transition for dark mode toggle */
-*,
-*::before,
-*::after {
-  transition-property: background-color, border-color;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
+/* Smooth transition for dark mode toggle - targeted elements only */
+body,
+#app,
+.bg-white,
+.bg-gray-50,
+.bg-gray-100,
+[class*="dark:bg-"] {
+  transition: background-color 200ms ease-in-out;
 }
 
-/* Disable transition on page load to prevent flash */
-.no-transition *,
-.no-transition *::before,
-.no-transition *::after {
-  transition: none !important;
+/* Form elements should NOT transition to avoid jarring filter effects */
+input,
+select,
+textarea,
+button {
+  transition: none;
+}
+
+/* Only transition box-shadow for focus states */
+input:focus,
+select:focus,
+textarea:focus {
+  transition: box-shadow 150ms ease-in-out;
 }
 
 /* Custom scrollbar - light mode */

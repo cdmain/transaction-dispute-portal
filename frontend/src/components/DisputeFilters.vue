@@ -1,11 +1,12 @@
 <template>
-  <div class="space-y-4">
-    <div class="flex flex-wrap gap-4 items-end bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div class="w-40">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <!-- Filters Row -->
+    <div class="p-3 flex flex-wrap items-center gap-3">
+      <div class="flex-shrink-0">
+        <label class="sr-only">Status</label>
         <select
           v-model="localFilters.status"
-          class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-1.5 pl-3 pr-8 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
           @change="applyFilters"
         >
           <option :value="undefined">All Statuses</option>
@@ -18,11 +19,11 @@
         </select>
       </div>
 
-      <div class="w-48">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+      <div class="flex-shrink-0">
+        <label class="sr-only">Category</label>
         <select
           v-model="localFilters.category"
-          class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-1.5 pl-3 pr-8 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
           @change="applyFilters"
         >
           <option :value="undefined">All Categories</option>
@@ -38,32 +39,37 @@
         </select>
       </div>
 
-      <div class="w-40">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span class="text-xs text-gray-500 dark:text-gray-400">From</span>
         <input
           v-model="localFilters.fromDate"
           type="date"
-          class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-1.5 px-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
           @change="applyFilters"
         />
       </div>
 
-      <div class="w-40">
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span class="text-xs text-gray-500 dark:text-gray-400">To</span>
         <input
           v-model="localFilters.toDate"
           type="date"
-          class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          class="text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white py-1.5 px-2 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
           @change="applyFilters"
         />
       </div>
 
-      <button
-        @click="resetFilters"
-        class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-      >
-        Reset
-      </button>
+      <div class="ml-auto">
+        <button
+          @click="resetFilters"
+          class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+        >
+          <svg class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Reset
+        </button>
+      </div>
     </div>
   </div>
 </template>

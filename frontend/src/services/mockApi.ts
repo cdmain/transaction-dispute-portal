@@ -306,6 +306,21 @@ export const mockDisputeApi = {
       filtered = filtered.filter(d => d.status === params.status)
     }
     
+    if (params?.category !== undefined) {
+      filtered = filtered.filter(d => d.category === params.category)
+    }
+    
+    if (params?.fromDate) {
+      const fromDate = new Date(params.fromDate)
+      filtered = filtered.filter(d => new Date(d.createdAt) >= fromDate)
+    }
+    
+    if (params?.toDate) {
+      const toDate = new Date(params.toDate)
+      toDate.setHours(23, 59, 59, 999) // End of day
+      filtered = filtered.filter(d => new Date(d.createdAt) <= toDate)
+    }
+    
     if ((params as any)?.searchTerm) {
       const search = ((params as any).searchTerm as string).toLowerCase()
       filtered = filtered.filter(d => 

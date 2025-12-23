@@ -115,8 +115,8 @@
                     Close
                   </button>
                   <button
-                    v-if="canRedispute"
-                    @click="$emit('redispute', transaction)"
+                    v-if="canRedispute && transaction"
+                    @click="$emit('redispute', transaction!)"
                     class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
                     File New Dispute
@@ -132,9 +132,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue'
+import { computed } from 'vue'
 import { useDisputesByTransaction } from '@/composables'
-import type { Transaction, Dispute } from '@/types'
+import type { Transaction } from '@/types'
 import { DisputeStatus } from '@/types'
 import { format } from 'date-fns'
 
