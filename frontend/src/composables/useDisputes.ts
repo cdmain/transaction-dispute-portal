@@ -144,6 +144,30 @@ export function useCancelDispute() {
   })
 }
 
+export function useUpdateDisputeDescription() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, description }: { id: string; description: string }) => 
+      disputeApi.updateDisputeDescription(id, description),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: disputeKeys.all })
+    },
+  })
+}
+
+export function useDeleteDispute() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => disputeApi.deleteDispute(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: disputeKeys.all })
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
+    },
+  })
+}
+
 export function useDisputesByTransaction(transactionId: string) {
   return useQuery({
     queryKey: disputeKeys.byTransaction(transactionId),

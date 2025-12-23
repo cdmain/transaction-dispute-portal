@@ -10,7 +10,9 @@ public interface IDisputeService
     Task<IEnumerable<Dispute>> GetDisputesByTransactionIdAsync(Guid transactionId);
     Task<Dispute> CreateDisputeAsync(CreateDisputeRequest request);
     Task<Dispute?> UpdateDisputeStatusAsync(Guid id, UpdateDisputeStatusRequest request);
+    Task<Dispute?> UpdateDisputeDescriptionAsync(Guid id, string description);
     Task<bool> CancelDisputeAsync(Guid id);
+    Task<bool> DeleteDisputeAsync(Guid id);
     Task<DisputeStatistics> GetStatisticsAsync(string? customerId = null);
 }
 

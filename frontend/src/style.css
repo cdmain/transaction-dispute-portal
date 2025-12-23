@@ -14,11 +14,32 @@ body {
   background-color: #f8fafc;
 }
 
+/* Dark mode body background */
+.dark body {
+  background-color: #111827;
+}
+
 #app {
   min-height: 100vh;
 }
 
-/* Custom scrollbar */
+/* Smooth transition for dark mode toggle */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+/* Disable transition on page load to prevent flash */
+.no-transition *,
+.no-transition *::before,
+.no-transition *::after {
+  transition: none !important;
+}
+
+/* Custom scrollbar - light mode */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -35,4 +56,24 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Custom scrollbar - dark mode */
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Form inputs in dark mode - color scheme for date pickers */
+.dark input[type="date"],
+.dark input[type="datetime-local"],
+.dark select {
+  color-scheme: dark;
 }

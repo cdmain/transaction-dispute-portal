@@ -10,7 +10,7 @@ const register = useRegister()
 const registerSchema = z.object({
   email: z.string().email('Please enter a valid email'),
   password: z.string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
@@ -67,23 +67,23 @@ const errorMessage = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Create an Account
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
+        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Register to access the Transaction Dispute Portal
         </p>
       </div>
       
       <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="rounded-md bg-red-50 p-4">
+        <div v-if="errorMessage" class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
           <div class="flex">
             <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">{{ errorMessage }}</h3>
+              <h3 class="text-sm font-medium text-red-800 dark:text-red-400">{{ errorMessage }}</h3>
             </div>
           </div>
         </div>
@@ -91,41 +91,41 @@ const errorMessage = computed(() => {
         <div class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+              <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
               <input
                 id="firstName"
                 v-model="form.firstName"
                 name="firstName"
                 type="text"
                 required
-                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                :class="{ 'border-red-300': validationErrors.firstName }"
+                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                :class="{ 'border-red-300 dark:border-red-500': validationErrors.firstName }"
                 placeholder="John"
               />
-              <p v-if="validationErrors.firstName" class="mt-1 text-xs text-red-600">
+              <p v-if="validationErrors.firstName" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ validationErrors.firstName }}
               </p>
             </div>
             <div>
-              <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+              <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
               <input
                 id="lastName"
                 v-model="form.lastName"
                 name="lastName"
                 type="text"
                 required
-                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                :class="{ 'border-red-300': validationErrors.lastName }"
+                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                :class="{ 'border-red-300 dark:border-red-500': validationErrors.lastName }"
                 placeholder="Doe"
               />
-              <p v-if="validationErrors.lastName" class="mt-1 text-xs text-red-600">
+              <p v-if="validationErrors.lastName" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ validationErrors.lastName }}
               </p>
             </div>
           </div>
           
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
             <input
               id="email"
               v-model="form.email"
@@ -133,17 +133,17 @@ const errorMessage = computed(() => {
               type="email"
               autocomplete="email"
               required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              :class="{ 'border-red-300': validationErrors.email }"
+              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              :class="{ 'border-red-300 dark:border-red-500': validationErrors.email }"
               placeholder="john.doe@example.com"
             />
-            <p v-if="validationErrors.email" class="mt-1 text-xs text-red-600">
+            <p v-if="validationErrors.email" class="mt-1 text-xs text-red-600 dark:text-red-400">
               {{ validationErrors.email }}
             </p>
           </div>
           
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+            <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
             <input
               id="password"
               v-model="form.password"
@@ -151,20 +151,20 @@ const errorMessage = computed(() => {
               type="password"
               autocomplete="new-password"
               required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              :class="{ 'border-red-300': validationErrors.password }"
+              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              :class="{ 'border-red-300 dark:border-red-500': validationErrors.password }"
               placeholder="••••••••"
             />
-            <p v-if="validationErrors.password" class="mt-1 text-xs text-red-600">
+            <p v-if="validationErrors.password" class="mt-1 text-xs text-red-600 dark:text-red-400">
               {{ validationErrors.password }}
             </p>
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Must be at least 6 characters with uppercase, lowercase, and number
             </p>
           </div>
           
           <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
             <input
               id="confirmPassword"
               v-model="form.confirmPassword"
@@ -172,11 +172,11 @@ const errorMessage = computed(() => {
               type="password"
               autocomplete="new-password"
               required
-              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              :class="{ 'border-red-300': validationErrors.confirmPassword }"
+              class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              :class="{ 'border-red-300 dark:border-red-500': validationErrors.confirmPassword }"
               placeholder="••••••••"
             />
-            <p v-if="validationErrors.confirmPassword" class="mt-1 text-xs text-red-600">
+            <p v-if="validationErrors.confirmPassword" class="mt-1 text-xs text-red-600 dark:text-red-400">
               {{ validationErrors.confirmPassword }}
             </p>
           </div>
@@ -199,7 +199,7 @@ const errorMessage = computed(() => {
         </div>
 
         <div class="text-center">
-          <router-link to="/login" class="font-medium text-blue-600 hover:text-blue-500">
+          <router-link to="/login" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
             Already have an account? Sign in
           </router-link>
         </div>

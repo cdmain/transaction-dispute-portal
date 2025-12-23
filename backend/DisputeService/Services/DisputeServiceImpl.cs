@@ -200,6 +200,43 @@ public class DisputeServiceImpl : IDisputeService
         return true;
     }
 
+    public async Task<Dispute?> UpdateDisputeDescriptionAsync(Guid id, string description)
+    {
+        var dispute = await _context.Disputes.FindAsync(id);
+        if (dispute == null)
+        {
+            return null;
+        }
+
+        dispute.Description = description;
+        dispute.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Updated description for dispute {DisputeId}", id);
+
+        return dispute;
+    }
+
+    public async Task<bool> DeleteDisputeAsync(Guid id)
+    {
+        var dispute = await _context.Disputes.FindAsync(id);
+        if (dispute == null)
+        {
+            return false;
+        }
+
+        _context.Disputes.Remove(dispute);
+        await _context.SaveChangesAsync();
+
+        // Unmark transaction as disputed
+        await NotifyTransactionServiceAsync(dispute.TransactionId, false);
+
+        _logger.LogInformation("Deleted dispute {DisputeId}", id);
+
+        return true;
+    }
+
     public async Task<DisputeStatistics> GetStatisticsAsync(string? customerId = null)
     {
         var query = _context.Disputes.AsQueryable();

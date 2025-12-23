@@ -48,6 +48,10 @@ publish/
 logs/
 *.log
 
+# Corporate CA certificates (machine-specific, do not commit)
+ca-certificates.crt
+backend/ca-certificates.crt
+
 # Coverage
 coverage/
 

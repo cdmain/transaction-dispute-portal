@@ -24,7 +24,7 @@ onMounted(() => {
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters')
+  password: z.string().min(8, 'Password must be at least 8 characters')
 })
 
 const form = ref({
@@ -86,7 +86,7 @@ const errorMessage = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
       <!-- Demo Mode Banner -->
       <div v-if="isDemo" class="rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white shadow-lg">
@@ -106,20 +106,20 @@ const errorMessage = computed(() => {
       </div>
 
       <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
           Transaction Dispute Portal
         </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
+        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Sign in to your account
         </p>
       </div>
       
       <form class="mt-8 space-y-6" @submit.prevent="handleSubmit">
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="rounded-md bg-red-50 p-4">
+        <div v-if="errorMessage" class="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
           <div class="flex">
             <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">{{ errorMessage }}</h3>
+              <h3 class="text-sm font-medium text-red-800 dark:text-red-400">{{ errorMessage }}</h3>
             </div>
           </div>
         </div>
@@ -134,11 +134,11 @@ const errorMessage = computed(() => {
               type="email"
               autocomplete="email"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-300': validationErrors.email }"
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              :class="{ 'border-red-300 dark:border-red-500': validationErrors.email }"
               placeholder="Email address"
             />
-            <p v-if="validationErrors.email" class="mt-1 text-xs text-red-600">
+            <p v-if="validationErrors.email" class="mt-1 text-xs text-red-600 dark:text-red-400">
               {{ validationErrors.email }}
             </p>
           </div>
@@ -151,11 +151,11 @@ const errorMessage = computed(() => {
               type="password"
               autocomplete="current-password"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              :class="{ 'border-red-300': validationErrors.password }"
+              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white dark:bg-gray-800 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+              :class="{ 'border-red-300 dark:border-red-500': validationErrors.password }"
               placeholder="Password"
             />
-            <p v-if="validationErrors.password" class="mt-1 text-xs text-red-600">
+            <p v-if="validationErrors.password" class="mt-1 text-xs text-red-600 dark:text-red-400">
               {{ validationErrors.password }}
             </p>
           </div>
@@ -178,25 +178,25 @@ const errorMessage = computed(() => {
         </div>
 
         <div class="text-center">
-          <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-500">
+          <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
             Don't have an account? Register
           </router-link>
         </div>
 
         <!-- Demo credentials with copy and fill buttons -->
-        <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-          <p class="text-sm font-semibold text-blue-800 text-center mb-3">Demo Credentials</p>
+        <div class="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <p class="text-sm font-semibold text-blue-800 dark:text-blue-300 text-center mb-3">Demo Credentials</p>
           
           <div class="space-y-2">
-            <div class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-gray-200">
+            <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-md px-3 py-2 border border-gray-200 dark:border-gray-700">
               <div class="flex-1">
-                <span class="text-xs text-gray-500">Email:</span>
-                <span class="ml-2 text-sm font-mono text-gray-800">demo@example.com</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Email:</span>
+                <span class="ml-2 text-sm font-mono text-gray-800 dark:text-gray-200">demo@example.com</span>
               </div>
               <button 
                 type="button"
                 @click="copyToClipboard('demo@example.com', 'email')"
-                class="ml-2 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                class="ml-2 p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
                 title="Copy email"
               >
                 <svg v-if="copiedField === 'email'" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,15 +208,15 @@ const errorMessage = computed(() => {
               </button>
             </div>
             
-            <div class="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-gray-200">
+            <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-md px-3 py-2 border border-gray-200 dark:border-gray-700">
               <div class="flex-1">
-                <span class="text-xs text-gray-500">Password:</span>
-                <span class="ml-2 text-sm font-mono text-gray-800">Demo123!</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Password:</span>
+                <span class="ml-2 text-sm font-mono text-gray-800 dark:text-gray-200">Demo123!</span>
               </div>
               <button 
                 type="button"
                 @click="copyToClipboard('Demo123!', 'password')"
-                class="ml-2 p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                class="ml-2 p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
                 title="Copy password"
               >
                 <svg v-if="copiedField === 'password'" class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,7 +232,7 @@ const errorMessage = computed(() => {
           <button
             type="button"
             @click="fillDemoCredentials"
-            class="mt-3 w-full py-2 px-4 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            class="mt-3 w-full py-2 px-4 border border-blue-300 dark:border-blue-700 text-sm font-medium rounded-md text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             ✨ Fill Demo Credentials
           </button>
