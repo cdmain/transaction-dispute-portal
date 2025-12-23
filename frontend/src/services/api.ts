@@ -122,6 +122,14 @@ export const transactionApi = {
     }
     const response = await api.get('/transactions/categories')
     return response.data
+  },
+
+  seedTransactions: async (): Promise<Transaction[]> => {
+    if (isDemoMode()) {
+      return mockTransactionApi.seedTransactions()
+    }
+    const response = await api.post('/transactions/seed')
+    return response.data
   }
 }
 
@@ -183,6 +191,21 @@ export const disputeApi = {
       return mockDisputeApi.cancelDispute(id)
     }
     await api.post(`/disputes/${id}/cancel`)
+  },
+
+  updateDisputeDescription: async (id: string, description: string): Promise<Dispute> => {
+    if (isDemoMode()) {
+      return mockDisputeApi.updateDisputeDescription(id, description)
+    }
+    const response = await api.put(`/disputes/${id}/description`, { description })
+    return response.data
+  },
+
+  deleteDispute: async (id: string): Promise<void> => {
+    if (isDemoMode()) {
+      return mockDisputeApi.deleteDispute(id)
+    }
+    await api.delete(`/disputes/${id}`)
   },
 
   getStatistics: async (customerId?: string): Promise<DisputeStatistics> => {

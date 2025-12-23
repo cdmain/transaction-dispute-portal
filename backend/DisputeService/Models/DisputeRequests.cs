@@ -45,6 +45,13 @@ public class UpdateDisputeStatusRequest
     public string? ResolutionNotes { get; set; }
 }
 
+public class UpdateDisputeDescriptionRequest
+{
+    [Required]
+    [StringLength(2000)]
+    public string Description { get; set; } = string.Empty;
+}
+
 public class DisputeQueryParameters
 {
     public string? CustomerId { get; set; }

@@ -10,4 +10,5 @@ public interface ITransactionService
     Task<bool> MarkAsDisputedAsync(Guid id);
     Task<bool> UnmarkAsDisputedAsync(Guid id);
     Task<IEnumerable<string>> GetCategoriesAsync();
+    Task<IEnumerable<Transaction>> SeedTransactionsForCustomerAsync(string customerId);
 }

@@ -1,6 +1,7 @@
 using Shared.Infrastructure.Middleware;
 using Shared.Infrastructure.HealthChecks;
 using Shared.Infrastructure.RateLimiting;
+using Shared.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,21 +26,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configure CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
+// Configure Secure CORS
+builder.Services.AddSecureCors(builder.Configuration);
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
 app.UseExceptionHandler();
+
+// Security middleware - OWASP 2025 compliant
+app.UseApiSecurityHeaders();
+app.UseRequestValidation();
+
 app.UseCorrelationId();
 app.UseRateLimiter();
 
@@ -49,7 +47,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors();
+app.UseSecureCors(app.Environment);
 
 // Map health check endpoints
 app.MapServiceHealthChecks();
