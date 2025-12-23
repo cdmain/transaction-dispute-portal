@@ -43,8 +43,8 @@ cd transaction-dispute-portal
 # Copy environment file
 cp .env.example .env
 
-# Start all services
-docker compose up -d --build
+# Start all services (pulls pre-built images from GitHub Container Registry)
+docker compose up -d
 ```
 
 Open http://localhost:3000
@@ -53,6 +53,14 @@ Open http://localhost:3000
 
 ```bash
 docker compose down
+```
+
+### Local Build (Alternative)
+
+If you prefer to build images locally:
+
+```bash
+docker compose -f docker-compose.build.yml up -d --build
 ```
 
 ---

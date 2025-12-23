@@ -1,0 +1,143 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# Docker Image Build & Publish Pipeline
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Builds and publishes Docker images to GitHub Container Registry (ghcr.io)
+# Images are publicly available for anyone to pull and run
+#
+# IMAGES:
+# • ghcr.io/cdmain/transaction-dispute-portal/api-gateway
+# • ghcr.io/cdmain/transaction-dispute-portal/auth-service
+# • ghcr.io/cdmain/transaction-dispute-portal/transaction-service
+# • ghcr.io/cdmain/transaction-dispute-portal/dispute-service
+# • ghcr.io/cdmain/transaction-dispute-portal/frontend
+#
+# ══════════════════════════════════════════════════════════════════════════════
+
+name: Build & Publish Docker Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-publish.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/cdmain/transaction-dispute-portal
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata for images
+        id: meta
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      # Build and push API Gateway
+      - name: Build and push API Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/ApiGateway/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/api-gateway:latest
+            ${{ env.IMAGE_PREFIX }}/api-gateway:${{ steps.meta.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build and push Auth Service
+      - name: Build and push Auth Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/AuthService/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/auth-service:latest
+            ${{ env.IMAGE_PREFIX }}/auth-service:${{ steps.meta.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build and push Transaction Service
+      - name: Build and push Transaction Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/TransactionService/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/transaction-service:latest
+            ${{ env.IMAGE_PREFIX }}/transaction-service:${{ steps.meta.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build and push Dispute Service
+      - name: Build and push Dispute Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/DisputeService/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/dispute-service:latest
+            ${{ env.IMAGE_PREFIX }}/dispute-service:${{ steps.meta.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build and push Frontend
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/frontend:latest
+            ${{ env.IMAGE_PREFIX }}/frontend:${{ steps.meta.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          echo "## 🐳 Docker Images Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All images have been pushed to GitHub Container Registry:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Image |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| API Gateway | \`${{ env.IMAGE_PREFIX }}/api-gateway:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auth Service | \`${{ env.IMAGE_PREFIX }}/auth-service:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Transaction Service | \`${{ env.IMAGE_PREFIX }}/transaction-service:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dispute Service | \`${{ env.IMAGE_PREFIX }}/dispute-service:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | \`${{ env.IMAGE_PREFIX }}/frontend:latest\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Usage" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker compose up -d" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
