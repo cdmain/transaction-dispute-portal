@@ -1,5 +1,6 @@
-# Transaction Dispute Portal - Docker Compose
-# Usage: docker compose up -d
+# Transaction Dispute Portal - Container Compose
+# Runtime: containerd (via Rancher Desktop) or Docker
+# Usage: nerdctl compose up -d (or docker compose up -d)
 
 services:
   # Redis Cache

@@ -5,14 +5,16 @@ A microservice application for managing financial transaction disputes.
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
 [![Vue 3](https://img.shields.io/badge/Vue-3.4-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![containerd](https://img.shields.io/badge/containerd-Ready-575757?logo=containerd&logoColor=white)](https://containerd.io/)
 
 ---
 
 ## Quick Start
 
+> Uses **containerd** via [Rancher Desktop](https://rancherdesktop.io/). If using Docker, replace `nerdctl` with `docker`.
+
 ```bash
-docker compose up -d --build
+nerdctl compose up -d --build
 ```
 
 Open http://localhost:3000

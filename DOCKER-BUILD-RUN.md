@@ -1,20 +1,24 @@
-# Docker Setup
+# Container Setup
+
+> **Note:** This project uses **containerd** as the container runtime via [Rancher Desktop](https://rancherdesktop.io/).
+> All commands use `nerdctl` (the containerd CLI), which is Docker-compatible.
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/get-started) installed and running
+- [Rancher Desktop](https://rancherdesktop.io/) installed with **containerd** runtime selected
+- OR Docker Desktop with Docker daemon running (substitute `nerdctl` with `docker`)
 
 ## Quick Start
 
 ```bash
 # Build and start all services
-docker compose up -d --build
+nerdctl compose up -d --build
 
 # View logs
-docker compose logs -f
+nerdctl compose logs -f
 
 # Stop all services
-docker compose down
+nerdctl compose down
 ```
 
 ## Access
@@ -43,7 +47,7 @@ docker compose down
 
 ## Data Persistence
 
-Data is stored in Docker volumes:
+Data is stored in container volumes:
 - `auth-data` - User accounts
 - `transaction-data` - Transactions
 - `dispute-data` - Disputes
@@ -52,10 +56,10 @@ Data is stored in Docker volumes:
 
 ```bash
 # Stop services and remove volumes
-docker compose down -v
+nerdctl compose down -v
 
 # Rebuild from scratch
-docker compose up -d --build
+nerdctl compose up -d --build
 ```
 
 ## Troubleshooting
@@ -65,10 +69,16 @@ The API Gateway uses port 5050 to avoid conflicts with macOS AirPlay.
 
 **Container not starting**  
 ```bash
-docker compose logs <service-name>
+nerdctl compose logs <service-name>
 ```
 
 **Rebuild a specific service**  
 ```bash
-docker compose up -d --build <service-name>
+nerdctl compose up -d --build <service-name>
+```
+
+**"Cannot connect to Docker daemon" error**  
+You're using containerd, not Docker. Use `nerdctl` instead of `docker`:
+```bash
+nerdctl compose up -d --build
 ```
