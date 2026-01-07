@@ -1,13 +1,19 @@
+/**
+ * Dispute Composables
+ * 
+ * TanStack Query hooks for dispute data.
+ * Uses the typed endpoints for API calls.
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import type { 
-  DisputeQueryParams, 
-  CreateDisputeRequest 
-} from '@/types'
-import { disputeApi } from '@/services/api'
-import { transactionKeys } from './useTransactions'
+import * as disputeApi from '@/endpoints/disputes'
+import type { DisputeQueryParams, CreateDisputeRequest } from '@/endpoints/disputes'
+import { transactionKeys } from '../transactions'
 
-// Query keys
+// ─────────────────────────────────────────────────────────────────────────────
+// Query Keys
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const disputeKeys = {
   all: ['disputes'] as const,
   lists: () => [...disputeKeys.all, 'list'] as const,
@@ -21,7 +27,10 @@ export const disputeKeys = {
 // Default customer ID for demo
 const DEFAULT_CUSTOMER_ID = 'CUST001'
 
-// Reactive filters state
+// ─────────────────────────────────────────────────────────────────────────────
+// Filter State
+// ─────────────────────────────────────────────────────────────────────────────
+
 const filters = ref<DisputeQueryParams>({
   customerId: DEFAULT_CUSTOMER_ID,
   page: 1,
@@ -42,12 +51,12 @@ export function useDisputeFilters() {
   }
 
   const nextPage = () => {
-    filters.value.page = (filters.value.page || 1) + 1
+    filters.value.page = (filters.value.page ?? 1) + 1
   }
 
   const previousPage = () => {
-    if ((filters.value.page || 1) > 1) {
-      filters.value.page = (filters.value.page || 1) - 1
+    if ((filters.value.page ?? 1) > 1) {
+      filters.value.page = (filters.value.page ?? 1) - 1
     }
   }
 
@@ -59,6 +68,10 @@ export function useDisputeFilters() {
     previousPage,
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Queries
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function useDisputes() {
   const { filters, setFilters, resetFilters, nextPage, previousPage } = useDisputeFilters()
@@ -114,17 +127,26 @@ export function useDisputeStatistics(customerId?: string) {
   })
 }
 
+export function useDisputesByTransaction(transactionId: string) {
+  return useQuery({
+    queryKey: disputeKeys.byTransaction(transactionId),
+    queryFn: () => disputeApi.getDisputesByTransaction(transactionId),
+    enabled: !!transactionId,
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mutations
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function useCreateDispute() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (data: CreateDisputeRequest) => disputeApi.createDispute(data),
     onSuccess: (_, variables) => {
-      // Invalidate disputes list
       queryClient.invalidateQueries({ queryKey: disputeKeys.lists() })
-      // Invalidate statistics
       queryClient.invalidateQueries({ queryKey: disputeKeys.statistics(variables.customerId) })
-      // Invalidate transactions to update disputed status
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
     },
   })
@@ -134,11 +156,9 @@ export function useCancelDispute() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => disputeApi.cancelDispute(id),
+    mutationFn: disputeApi.cancelDispute,
     onSuccess: () => {
-      // Invalidate all dispute queries
       queryClient.invalidateQueries({ queryKey: disputeKeys.all })
-      // Invalidate transactions
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
     },
   })
@@ -160,18 +180,10 @@ export function useDeleteDispute() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => disputeApi.deleteDispute(id),
+    mutationFn: disputeApi.deleteDispute,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: disputeKeys.all })
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
     },
-  })
-}
-
-export function useDisputesByTransaction(transactionId: string) {
-  return useQuery({
-    queryKey: disputeKeys.byTransaction(transactionId),
-    queryFn: () => disputeApi.getDisputesByTransaction(transactionId),
-    enabled: !!transactionId,
   })
 }

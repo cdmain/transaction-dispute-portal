@@ -321,8 +321,8 @@ export const mockDisputeApi = {
       filtered = filtered.filter(d => new Date(d.createdAt) <= toDate)
     }
     
-    if ((params as any)?.searchTerm) {
-      const search = ((params as any).searchTerm as string).toLowerCase()
+    if (params?.searchTerm) {
+      const search = params.searchTerm.toLowerCase()
       filtered = filtered.filter(d => 
         d.reason.toLowerCase().includes(search) ||
         d.merchantName?.toLowerCase().includes(search)

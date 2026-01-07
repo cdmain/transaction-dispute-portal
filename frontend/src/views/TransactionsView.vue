@@ -113,12 +113,9 @@
 import { ref } from 'vue'
 import { useTransactions, useTransactionCategories } from '@/composables'
 import type { Transaction, TransactionQueryParams } from '@/types'
-import TransactionCard from '@/components/TransactionCard.vue'
-import TransactionFilters from '@/components/TransactionFilters.vue'
-import DisputeModal from '@/components/DisputeModal.vue'
-import DisputeHistoryModal from '@/components/DisputeHistoryModal.vue'
-import Pagination from '@/components/Pagination.vue'
-import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
+import { TransactionCard, TransactionFilters } from '@/components/transactions'
+import { DisputeModal, DisputeHistoryModal } from '@/components/disputes'
+import { Pagination, LoadingSkeleton } from '@/components/ui'
 import { transactionApi } from '@/services/api'
 
 const {

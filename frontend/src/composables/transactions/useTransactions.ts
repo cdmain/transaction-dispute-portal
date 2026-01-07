@@ -1,9 +1,18 @@
+/**
+ * Transaction Composables
+ * 
+ * TanStack Query hooks for transaction data.
+ * Uses the typed endpoints for API calls.
+ */
 import { useQuery } from '@tanstack/vue-query'
 import { ref, computed } from 'vue'
-import type { TransactionQueryParams } from '@/types'
-import { transactionApi } from '@/services/api'
+import * as transactionApi from '@/endpoints/transactions'
+import type { TransactionQueryParams } from '@/endpoints/transactions'
 
-// Query keys
+// ─────────────────────────────────────────────────────────────────────────────
+// Query Keys
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const transactionKeys = {
   all: ['transactions'] as const,
   lists: () => [...transactionKeys.all, 'list'] as const,
@@ -16,7 +25,10 @@ export const transactionKeys = {
 // Default customer ID for demo
 const DEFAULT_CUSTOMER_ID = 'CUST001'
 
-// Reactive filters state
+// ─────────────────────────────────────────────────────────────────────────────
+// Filter State
+// ─────────────────────────────────────────────────────────────────────────────
+
 const filters = ref<TransactionQueryParams>({
   customerId: DEFAULT_CUSTOMER_ID,
   page: 1,
@@ -37,12 +49,12 @@ export function useTransactionFilters() {
   }
 
   const nextPage = () => {
-    filters.value.page = (filters.value.page || 1) + 1
+    filters.value.page = (filters.value.page ?? 1) + 1
   }
 
   const previousPage = () => {
-    if ((filters.value.page || 1) > 1) {
-      filters.value.page = (filters.value.page || 1) - 1
+    if ((filters.value.page ?? 1) > 1) {
+      filters.value.page = (filters.value.page ?? 1) - 1
     }
   }
 
@@ -54,6 +66,10 @@ export function useTransactionFilters() {
     previousPage,
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Queries
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function useTransactions() {
   const { filters, setFilters, resetFilters, nextPage, previousPage } = useTransactionFilters()
@@ -102,7 +118,7 @@ export function useTransaction(id: string) {
 export function useTransactionCategories() {
   return useQuery({
     queryKey: transactionKeys.categories(),
-    queryFn: () => transactionApi.getCategories(),
+    queryFn: transactionApi.getCategories,
     staleTime: 300000, // 5 minutes
   })
 }

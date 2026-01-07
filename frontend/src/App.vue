@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import Navbar from './components/Navbar.vue'
+import { Navbar } from '@/components'
 import { isDemoMode } from './services/mockApi'
 
 const route = useRoute()

@@ -148,12 +148,12 @@ import { ref, computed } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { useDisputes, useDisputeStatistics, useCancelDispute, useUpdateDisputeDescription, useDeleteDispute } from '@/composables'
 import type { Dispute, DisputeQueryParams } from '@/types'
-import DisputeCard from '@/components/DisputeCard.vue'
-import DisputeFilters from '@/components/DisputeFilters.vue'
-import Pagination from '@/components/Pagination.vue'
-import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
-import ConfirmModal from '@/components/ConfirmModal.vue'
-import EditDescriptionModal from '@/components/EditDescriptionModal.vue'
+import { 
+  DisputeCard, 
+  DisputeFilters, 
+  EditDescriptionModal 
+} from '@/components/disputes'
+import { Pagination, LoadingSkeleton, ConfirmModal } from '@/components/ui'
 
 const router = useRouter()
 

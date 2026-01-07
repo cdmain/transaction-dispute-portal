@@ -185,7 +185,7 @@ import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useDispute, useCancelDispute } from '@/composables'
 import { DisputeStatus } from '@/types'
 import { format } from 'date-fns'
-import ConfirmModal from '@/components/ConfirmModal.vue'
+import { ConfirmModal } from '@/components/ui'
 
 const route = useRoute()
 const router = useRouter()

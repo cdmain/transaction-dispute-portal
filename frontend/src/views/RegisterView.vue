@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
-import { useRegister } from '@/composables/useAuth'
+import { useRegister } from '@/composables'
 
 const router = useRouter()
 const register = useRegister()

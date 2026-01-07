@@ -27,10 +27,13 @@ See [DOCKER-BUILD-RUN.md](DOCKER-BUILD-RUN.md) for full setup instructions.
 
 ## Live Demo
 
-| Environment | URL |
-|-------------|-----|
-| DEV | [cdmain.github.io/transaction-dispute-portal/dev/](https://cdmain.github.io/transaction-dispute-portal/dev/) |
-| PROD | [cdmain.github.io/transaction-dispute-portal/prod/](https://cdmain.github.io/transaction-dispute-portal/prod/) |
+| Environment | URL | Description |
+|-------------|-----|-------------|
+| Landing | [cdmain.github.io/transaction-dispute-portal/](https://cdmain.github.io/transaction-dispute-portal/) | Environment selector |
+| DEV | [cdmain.github.io/transaction-dispute-portal/dev/](https://cdmain.github.io/transaction-dispute-portal/dev/) | Development build |
+| INT | [cdmain.github.io/transaction-dispute-portal/int/](https://cdmain.github.io/transaction-dispute-portal/int/) | Integration testing |
+| QA | [cdmain.github.io/transaction-dispute-portal/qa/](https://cdmain.github.io/transaction-dispute-portal/qa/) | Quality assurance |
+| PROD | [cdmain.github.io/transaction-dispute-portal/prod/](https://cdmain.github.io/transaction-dispute-portal/prod/) | Production build |
 
 ---
 

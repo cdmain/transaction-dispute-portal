@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
-import { useLogin } from '@/composables/useAuth'
+import { useLogin } from '@/composables'
 import { isDemoMode, DEMO_CREDENTIALS } from '@/services/mockApi'
 
 const router = useRouter()

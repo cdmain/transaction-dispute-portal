@@ -88,8 +88,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useAuth, useLogout } from '@/composables/useAuth'
-import { useDarkMode } from '@/composables/useDarkMode'
+import { useAuth, useLogout, useDarkMode } from '@/composables'
 
 const route = useRoute()
 const router = useRouter()

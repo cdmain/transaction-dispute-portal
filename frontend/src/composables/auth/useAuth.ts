@@ -1,7 +1,13 @@
+/**
+ * Auth Composables
+ * 
+ * Authentication state management and mutations.
+ * Uses the typed endpoints for API calls.
+ */
 import { ref, computed } from 'vue'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types'
-import { authApi } from '@/services/api'
+import * as authApi from '@/endpoints/auth'
+import type { AuthResponse, User } from '@/endpoints/auth'
 import { 
   TOKEN_KEY, 
   REFRESH_TOKEN_KEY, 
@@ -13,12 +19,21 @@ import {
 // Re-export getAuthToken for convenience
 export { getAuthToken }
 
-// Reactive auth state
+// ─────────────────────────────────────────────────────────────────────────────
+// Reactive Auth State (singleton)
+// ─────────────────────────────────────────────────────────────────────────────
+
 const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
 const refreshToken = ref<string | null>(localStorage.getItem(REFRESH_TOKEN_KEY))
 const user = ref<User | null>(
-  localStorage.getItem(USER_KEY) ? JSON.parse(localStorage.getItem(USER_KEY)!) : null
+  localStorage.getItem(USER_KEY) 
+    ? JSON.parse(localStorage.getItem(USER_KEY) as string) 
+    : null
 )
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth State Composable
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function useAuth() {
   const queryClient = useQueryClient()
@@ -43,8 +58,6 @@ export function useAuth() {
     user.value = null
     
     clearAuthStorage()
-    
-    // Clear all queries
     queryClient.clear()
   }
 
@@ -59,14 +72,16 @@ export function useAuth() {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Auth Mutations
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function useLogin() {
   const { setAuthData } = useAuth()
   
   return useMutation({
-    mutationFn: (data: LoginRequest) => authApi.login(data),
-    onSuccess: (response) => {
-      setAuthData(response)
-    },
+    mutationFn: authApi.login,
+    onSuccess: setAuthData,
   })
 }
 
@@ -74,10 +89,8 @@ export function useRegister() {
   const { setAuthData } = useAuth()
   
   return useMutation({
-    mutationFn: (data: RegisterRequest) => authApi.register(data),
-    onSuccess: (response) => {
-      setAuthData(response)
-    },
+    mutationFn: authApi.register,
+    onSuccess: setAuthData,
   })
 }
 
@@ -90,9 +103,7 @@ export function useLogout() {
         await authApi.logout(storedRefreshToken.value)
       }
     },
-    onSettled: () => {
-      clearAuthData()
-    },
+    onSettled: clearAuthData,
   })
 }
 
@@ -106,11 +117,7 @@ export function useRefreshToken() {
       }
       return authApi.refreshToken(storedRefreshToken.value)
     },
-    onSuccess: (response) => {
-      setAuthData(response)
-    },
-    onError: () => {
-      clearAuthData()
-    },
+    onSuccess: setAuthData,
+    onError: clearAuthData,
   })
 }
