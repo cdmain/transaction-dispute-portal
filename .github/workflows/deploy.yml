@@ -1,23 +1,18 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Multi-Environment Deployment Pipeline
+# Multi-Environment Deployment Pipeline (gh-pages branch strategy)
 # ══════════════════════════════════════════════════════════════════════════════
 #
-# DEPLOYMENT STRATEGY:
-# ┌─────────────────────────────────────────────────────────────────────────────┐
-# │  Branch: dev                                                                 │
-# │  └── Push → Runs CI tests only (no deployment)                              │
-# │                                                                              │
-# │  Branch: main (production tracking for rollbacks)                            │
-# │  └── Push → Builds and deploys ALL environments to GitHub Pages             │
-# │                                                                              │
-# │  FLOW: dev → PR → main → Deploy ALL environments                             │
-# └─────────────────────────────────────────────────────────────────────────────┘
+# HOW IT WORKS:
+# - All environments are deployed to the gh-pages branch
+# - Each source branch updates ONLY its target environment(s)
+# - Existing environments are preserved when not being updated
 #
-# ENVIRONMENTS (all deployed together as subfolders):
-# • DEV  - /dev/   - Latest development features
-# • INT  - /int/   - Integration testing  
-# • QA   - /qa/    - Pre-release testing
-# • PROD - /prod/  - Stable production
+# BRANCHING STRATEGY:
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │  dev branch     → Updates DEV + INT folders on gh-pages                     │
+# │  release/*      → Updates QA folder on gh-pages                             │
+# │  main branch    → Updates PROD folder on gh-pages                           │
+# └─────────────────────────────────────────────────────────────────────────────┘
 #
 # URLS:
 # • Landing: https://cdmain.github.io/transaction-dispute-portal/
@@ -32,60 +27,72 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - dev
+      - main
+      - 'release/*'
   workflow_dispatch:
     inputs:
-      force_deploy:
-        description: 'Force deployment'
-        required: false
-        type: boolean
-        default: true
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev-int
+          - qa
+          - prod
+          - all
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 env:
   BUN_VERSION: 'latest'
 
 jobs:
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Build ALL Environments (combined into single artifact)
-  # ─────────────────────────────────────────────────────────────────────────────
-  build:
-    name: 🔨 Build All Environments
+  deploy:
+    name: 🚀 Build & Deploy
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      branch: ${{ steps.branch.outputs.branch }}
-
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Determine Branch
-        id: branch
+      - name: Determine environments to deploy
+        id: env
         run: |
           BRANCH=${GITHUB_REF#refs/heads/}
-          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-          echo "🌿 Branch: $BRANCH"
+          echo "🌿 Source branch: $BRANCH"
+          
+          # Manual dispatch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            case "${{ inputs.environment }}" in
+              dev-int) echo "envs=dev int" >> $GITHUB_OUTPUT ;;
+              qa) echo "envs=qa" >> $GITHUB_OUTPUT ;;
+              prod) echo "envs=prod" >> $GITHUB_OUTPUT ;;
+              all) echo "envs=dev int qa prod" >> $GITHUB_OUTPUT ;;
+            esac
+            exit 0
+          fi
+          
+          # Branch-based
+          if [[ "$BRANCH" == "dev" ]]; then
+            echo "envs=dev int" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == release/* ]]; then
+            echo "envs=qa" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == "main" ]]; then
+            echo "envs=prod" >> $GITHUB_OUTPUT
+          else
+            echo "envs=" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Get Version
+      - name: Get version
         id: version
         run: |
           VERSION=$(cat VERSION 2>/dev/null || echo "1.0.0")
-          COMMIT_SHORT=$(git rev-parse --short HEAD)
-          TIMESTAMP=$(date +%Y%m%d-%H%M)
-          echo "version=${VERSION}-${COMMIT_SHORT}" >> $GITHUB_OUTPUT
-          echo "full_version=${VERSION}-${COMMIT_SHORT}-${TIMESTAMP}" >> $GITHUB_OUTPUT
-          echo "📦 Version: ${VERSION}-${COMMIT_SHORT}"
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "version=${VERSION}-${COMMIT}" >> $GITHUB_OUTPUT
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -96,11 +103,24 @@ jobs:
         working-directory: frontend
         run: bun install --frozen-lockfile || bun install
 
-      # ─────────────────────────────────────────────────────────────────────────
-      # Build each environment with different configurations
-      # ─────────────────────────────────────────────────────────────────────────
-      
-      - name: 🟢 Build DEV Environment
+      - name: Checkout gh-pages (existing site)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-existing
+        continue-on-error: true
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir -p deploy
+          # Copy existing site if it exists
+          if [ -d "gh-pages-existing" ]; then
+            cp -r gh-pages-existing/* deploy/ 2>/dev/null || true
+            rm -rf gh-pages-existing
+          fi
+
+      - name: 🟢 Build DEV
+        if: contains(steps.env.outputs.envs, 'dev')
         working-directory: frontend
         run: bun run build
         env:
@@ -108,12 +128,16 @@ jobs:
           VITE_ENVIRONMENT: 'dev'
           VITE_APP_VERSION: ${{ steps.version.outputs.version }}-dev
 
-      - name: Move DEV build
+      - name: Deploy DEV
+        if: contains(steps.env.outputs.envs, 'dev')
         run: |
-          mkdir -p dist/dev
-          cp -r frontend/dist/* dist/dev/
+          rm -rf deploy/dev
+          mkdir -p deploy/dev
+          cp -r frontend/dist/* deploy/dev/
+          echo "✅ DEV environment updated"
 
-      - name: 🔵 Build INT Environment
+      - name: 🔵 Build INT
+        if: contains(steps.env.outputs.envs, 'int')
         working-directory: frontend
         run: bun run build
         env:
@@ -121,12 +145,16 @@ jobs:
           VITE_ENVIRONMENT: 'int'
           VITE_APP_VERSION: ${{ steps.version.outputs.version }}-int
 
-      - name: Move INT build
+      - name: Deploy INT
+        if: contains(steps.env.outputs.envs, 'int')
         run: |
-          mkdir -p dist/int
-          cp -r frontend/dist/* dist/int/
+          rm -rf deploy/int
+          mkdir -p deploy/int
+          cp -r frontend/dist/* deploy/int/
+          echo "✅ INT environment updated"
 
-      - name: 🟡 Build QA Environment
+      - name: 🟡 Build QA
+        if: contains(steps.env.outputs.envs, 'qa')
         working-directory: frontend
         run: bun run build
         env:
@@ -134,12 +162,16 @@ jobs:
           VITE_ENVIRONMENT: 'qa'
           VITE_APP_VERSION: ${{ steps.version.outputs.version }}-qa
 
-      - name: Move QA build
+      - name: Deploy QA
+        if: contains(steps.env.outputs.envs, 'qa')
         run: |
-          mkdir -p dist/qa
-          cp -r frontend/dist/* dist/qa/
+          rm -rf deploy/qa
+          mkdir -p deploy/qa
+          cp -r frontend/dist/* deploy/qa/
+          echo "✅ QA environment updated"
 
-      - name: 🔴 Build PROD Environment
+      - name: 🔴 Build PROD
+        if: contains(steps.env.outputs.envs, 'prod')
         working-directory: frontend
         run: bun run build
         env:
@@ -147,229 +179,64 @@ jobs:
           VITE_ENVIRONMENT: 'prod'
           VITE_APP_VERSION: ${{ steps.version.outputs.version }}
 
-      - name: Move PROD build
+      - name: Deploy PROD
+        if: contains(steps.env.outputs.envs, 'prod')
         run: |
-          mkdir -p dist/prod
-          cp -r frontend/dist/* dist/prod/
+          rm -rf deploy/prod
+          mkdir -p deploy/prod
+          cp -r frontend/dist/* deploy/prod/
+          echo "✅ PROD environment updated"
 
-      # ─────────────────────────────────────────────────────────────────────────
-      # Create environment selector landing page
-      # ─────────────────────────────────────────────────────────────────────────
-      
-      - name: Create Landing Page
+      - name: Create landing page
         run: |
-          cat > dist/index.html << 'EOF'
+          cat > deploy/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Transaction Dispute Portal - Environments</title>
+            <title>Transaction Dispute Portal</title>
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-                background: linear-gradient(135deg, #1e3a5f 0%, #0f2840 100%); 
-                min-height: 100vh; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center;
-                padding: 2rem;
-              }
-              .container { text-align: center; color: white; max-width: 900px; width: 100%; }
-              .logo { font-size: 4rem; margin-bottom: 1rem; }
-              h1 { font-size: 2.5rem; margin-bottom: 0.5rem; font-weight: 700; }
-              .subtitle { opacity: 0.8; margin-bottom: 2.5rem; font-size: 1.1rem; }
-              .environments { 
-                display: grid; 
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-                gap: 1.25rem; 
-                margin-bottom: 2rem;
-              }
-              .env-card { 
-                background: rgba(255,255,255,0.08); 
-                backdrop-filter: blur(10px); 
-                border-radius: 16px; 
-                padding: 2rem 1.5rem; 
-                text-decoration: none; 
-                color: white; 
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-                border: 1px solid rgba(255,255,255,0.1);
-                position: relative;
-                overflow: hidden;
-              }
-              .env-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 4px;
-              }
-              .env-card.dev::before { background: #22c55e; }
-              .env-card.int::before { background: #3b82f6; }
-              .env-card.qa::before { background: #f59e0b; }
-              .env-card.prod::before { background: #ef4444; }
-              .env-card:hover { 
-                background: rgba(255,255,255,0.15); 
-                transform: translateY(-4px);
-                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-              }
-              .env-icon { font-size: 2rem; margin-bottom: 0.75rem; }
-              .env-name { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
-              .env-desc { font-size: 0.875rem; opacity: 0.7; margin-bottom: 0.75rem; }
-              .badge { 
-                display: inline-block; 
-                padding: 0.25rem 0.75rem; 
-                border-radius: 20px; 
-                font-size: 0.7rem; 
-                font-weight: 600;
-                letter-spacing: 0.5px;
-              }
-              .badge-dev { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #22c55e; }
-              .badge-int { background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #3b82f6; }
-              .badge-qa { background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #f59e0b; }
-              .badge-prod { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; }
-              .info { 
-                background: rgba(255,255,255,0.05); 
-                border-radius: 12px; 
-                padding: 1.5rem;
-                margin-top: 1rem;
-              }
-              .info h3 { font-size: 1rem; margin-bottom: 0.75rem; opacity: 0.9; }
-              .info p { font-size: 0.875rem; opacity: 0.7; line-height: 1.6; }
-              .credentials { 
-                background: rgba(34, 197, 94, 0.1); 
-                border: 1px solid rgba(34, 197, 94, 0.3);
-                border-radius: 8px; 
-                padding: 1rem; 
-                margin-top: 1rem;
-                font-family: monospace;
-              }
-              .credentials code { color: #22c55e; }
-              .footer { margin-top: 2rem; opacity: 0.5; font-size: 0.8rem; }
+              body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1e3a5f, #0f2840); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+              .container { text-align: center; color: white; max-width: 900px; }
+              h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+              .subtitle { opacity: 0.8; margin-bottom: 2rem; }
+              .environments { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+              .env-card { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; text-decoration: none; color: white; transition: all 0.3s; }
+              .env-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+              .env-card.dev { border: 2px solid #22c55e; }
+              .env-card.int { border: 2px solid #3b82f6; }
+              .env-card.qa { border: 2px solid #f59e0b; }
+              .env-card.prod { border: 2px solid #ef4444; }
+              .env-name { font-size: 1.25rem; font-weight: 600; }
+              .env-desc { font-size: 0.875rem; opacity: 0.7; }
+              .info { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; margin-top: 2rem; font-size: 0.875rem; }
+              .creds { font-family: monospace; color: #22c55e; }
             </style>
           </head>
           <body>
             <div class="container">
-              <div class="logo">🏦</div>
-              <h1>Transaction Dispute Portal</h1>
-              <p class="subtitle">Multi-Environment Deployment Demo</p>
-              
+              <h1>🏦 Transaction Dispute Portal</h1>
+              <p class="subtitle">Select an environment</p>
               <div class="environments">
-                <a href="./dev/" class="env-card dev">
-                  <div class="env-icon">🔧</div>
-                  <div class="env-name">Development</div>
-                  <div class="env-desc">Latest features & experiments</div>
-                  <span class="badge badge-dev">DEV</span>
-                </a>
-                
-                <a href="./int/" class="env-card int">
-                  <div class="env-icon">🔗</div>
-                  <div class="env-name">Integration</div>
-                  <div class="env-desc">Integration testing</div>
-                  <span class="badge badge-int">INT</span>
-                </a>
-                
-                <a href="./qa/" class="env-card qa">
-                  <div class="env-icon">🧪</div>
-                  <div class="env-name">QA</div>
-                  <div class="env-desc">Quality assurance testing</div>
-                  <span class="badge badge-qa">QA</span>
-                </a>
-                
-                <a href="./prod/" class="env-card prod">
-                  <div class="env-icon">🚀</div>
-                  <div class="env-name">Production</div>
-                  <div class="env-desc">Stable release</div>
-                  <span class="badge badge-prod">PROD</span>
-                </a>
+                <a href="./dev/" class="env-card dev"><div class="env-name">🟢 DEV</div><div class="env-desc">Development</div></a>
+                <a href="./int/" class="env-card int"><div class="env-name">🔵 INT</div><div class="env-desc">Integration</div></a>
+                <a href="./qa/" class="env-card qa"><div class="env-name">🟡 QA</div><div class="env-desc">Quality Assurance</div></a>
+                <a href="./prod/" class="env-card prod"><div class="env-name">🔴 PROD</div><div class="env-desc">Production</div></a>
               </div>
-              
-              <div class="info">
-                <h3>🔑 Demo Credentials</h3>
-                <div class="credentials">
-                  <code>Email: demo@example.com</code><br>
-                  <code>Password: Demo123!</code>
-                </div>
-                <p style="margin-top: 1rem;">
-                  All environments run in demo mode with mock data. 
-                  Each environment is isolated with its own configuration.
-                </p>
-              </div>
-              
-              <p class="footer">
-                Built with .NET 8 + Vue 3 + TypeScript • Deployed via GitHub Actions
-              </p>
+              <div class="info">Demo: <span class="creds">demo@example.com / Demo123!</span></div>
             </div>
           </body>
           </html>
           EOF
+          touch deploy/.nojekyll
 
-      - name: Create .nojekyll
-        run: touch dist/.nojekyll
-
-      - name: Create 404 page
-        run: cp dist/index.html dist/404.html
-
-      # ─────────────────────────────────────────────────────────────────────────
-      # Upload combined artifact (all environments together)
-      # ─────────────────────────────────────────────────────────────────────────
-      
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist/
-
-      - name: Build Summary
-        run: |
-          echo "## 🔨 Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ steps.branch.outputs.branch }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Built Environments" >> $GITHUB_STEP_SUMMARY
-          echo "| Environment | Path | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------------|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| DEV | /dev/ | ✅ Built |" >> $GITHUB_STEP_SUMMARY
-          echo "| INT | /int/ | ✅ Built |" >> $GITHUB_STEP_SUMMARY
-          echo "| QA | /qa/ | ✅ Built |" >> $GITHUB_STEP_SUMMARY
-          echo "| PROD | /prod/ | ✅ Built |" >> $GITHUB_STEP_SUMMARY
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Deploy to GitHub Pages (single deployment with all environments)
-  # ─────────────────────────────────────────────────────────────────────────────
-  deploy:
-    name: 🚀 Deploy to GitHub Pages
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      - name: Deployment Summary
-        run: |
-          echo "## 🎉 Deployment Complete!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Deployed from:** ${{ needs.build.outputs.branch }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🌐 Environment URLs" >> $GITHUB_STEP_SUMMARY
-          echo "| Environment | URL | Source Branch |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------------|-----|---------------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Landing | https://cdmain.github.io/transaction-dispute-portal/ | - |" >> $GITHUB_STEP_SUMMARY
-          echo "| DEV | https://cdmain.github.io/transaction-dispute-portal/dev/ | dev |" >> $GITHUB_STEP_SUMMARY
-          echo "| INT | https://cdmain.github.io/transaction-dispute-portal/int/ | dev |" >> $GITHUB_STEP_SUMMARY
-          echo "| QA | https://cdmain.github.io/transaction-dispute-portal/qa/ | main |" >> $GITHUB_STEP_SUMMARY
-          echo "| PROD | https://cdmain.github.io/transaction-dispute-portal/prod/ | main |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔑 Demo Credentials" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "Email: demo@example.com" >> $GITHUB_STEP_SUMMARY
-          echo "Password: Demo123!" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          publish_branch: gh-pages
+          keep_files: false
+          commit_message: "Deploy: ${{ steps.env.outputs.envs }} from ${{ github.ref_name }}"
