@@ -1,29 +1,18 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Multi-Environment Deployment Pipeline
+# Multi-Environment Deployment Pipeline (gh-pages branch strategy)
 # ══════════════════════════════════════════════════════════════════════════════
+#
+# HOW IT WORKS:
+# - All environments are deployed to the gh-pages branch
+# - Each source branch updates ONLY its target environment(s)
+# - Existing environments are preserved when not being updated
 #
 # BRANCHING STRATEGY:
 # ┌─────────────────────────────────────────────────────────────────────────────┐
-# │  feature/* branches                                                          │
-# │  └── PR → dev branch (code review required)                                 │
-# │                                                                              │
-# │  dev branch                                                                  │
-# │  └── Push → Auto-deploy to DEV and INT environments                        │
-# │                                                                              │
-# │  release/* branches                                                          │
-# │  └── Created from dev → Auto-deploy to QA                                   │
-# │  └── PR → main (requires approval) → Deploy to PROD                        │
-# │                                                                              │
-# │  main branch                                                                 │
-# │  └── Only receives merges from release/* branches                          │
-# │  └── Push → Deploy to PROD                                                 │
+# │  dev branch     → Updates DEV + INT folders on gh-pages                     │
+# │  release/*      → Updates QA folder on gh-pages                             │
+# │  main branch    → Updates PROD folder on gh-pages                           │
 # └─────────────────────────────────────────────────────────────────────────────┘
-#
-# ENVIRONMENTS:
-# • DEV  - /dev/   - Latest dev branch (auto-deploy)
-# • INT  - /int/   - Integration testing (auto-deploy with dev)
-# • QA   - /qa/    - Release candidate testing (release/* branches)
-# • PROD - /prod/  - Stable production (main branch only)
 #
 # URLS:
 # • Landing: https://cdmain.github.io/transaction-dispute-portal/
@@ -55,110 +44,55 @@ on:
           - all
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  contents: write
 
 env:
   BUN_VERSION: 'latest'
 
 jobs:
-  setup:
-    name: 🔍 Determine Deployment
+  deploy:
+    name: 🚀 Build & Deploy
     runs-on: ubuntu-latest
-    outputs:
-      deploy_dev: ${{ steps.check.outputs.deploy_dev }}
-      deploy_int: ${{ steps.check.outputs.deploy_int }}
-      deploy_qa: ${{ steps.check.outputs.deploy_qa }}
-      deploy_prod: ${{ steps.check.outputs.deploy_prod }}
-      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get Version
-        id: version
-        run: |
-          VERSION=$(cat VERSION 2>/dev/null || echo "1.0.0")
-          COMMIT_SHORT=$(git rev-parse --short HEAD)
-          echo "version=${VERSION}-${COMMIT_SHORT}" >> $GITHUB_OUTPUT
-
-      - name: Check deployment targets
-        id: check
+      - name: Determine environments to deploy
+        id: env
         run: |
           BRANCH=${GITHUB_REF#refs/heads/}
-          echo "🌿 Branch: $BRANCH"
+          echo "🌿 Source branch: $BRANCH"
           
+          # Manual dispatch
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             case "${{ inputs.environment }}" in
-              dev-int)
-                echo "deploy_dev=true" >> $GITHUB_OUTPUT
-                echo "deploy_int=true" >> $GITHUB_OUTPUT
-                echo "deploy_qa=false" >> $GITHUB_OUTPUT
-                echo "deploy_prod=false" >> $GITHUB_OUTPUT
-                ;;
-              qa)
-                echo "deploy_dev=false" >> $GITHUB_OUTPUT
-                echo "deploy_int=false" >> $GITHUB_OUTPUT
-                echo "deploy_qa=true" >> $GITHUB_OUTPUT
-                echo "deploy_prod=false" >> $GITHUB_OUTPUT
-                ;;
-              prod)
-                echo "deploy_dev=false" >> $GITHUB_OUTPUT
-                echo "deploy_int=false" >> $GITHUB_OUTPUT
-                echo "deploy_qa=false" >> $GITHUB_OUTPUT
-                echo "deploy_prod=true" >> $GITHUB_OUTPUT
-                ;;
-              all)
-                echo "deploy_dev=true" >> $GITHUB_OUTPUT
-                echo "deploy_int=true" >> $GITHUB_OUTPUT
-                echo "deploy_qa=true" >> $GITHUB_OUTPUT
-                echo "deploy_prod=true" >> $GITHUB_OUTPUT
-                ;;
+              dev-int) echo "envs=dev int" >> $GITHUB_OUTPUT ;;
+              qa) echo "envs=qa" >> $GITHUB_OUTPUT ;;
+              prod) echo "envs=prod" >> $GITHUB_OUTPUT ;;
+              all) echo "envs=dev int qa prod" >> $GITHUB_OUTPUT ;;
             esac
             exit 0
           fi
           
+          # Branch-based
           if [[ "$BRANCH" == "dev" ]]; then
-            echo "📦 Dev branch → Deploying to DEV + INT"
-            echo "deploy_dev=true" >> $GITHUB_OUTPUT
-            echo "deploy_int=true" >> $GITHUB_OUTPUT
-            echo "deploy_qa=false" >> $GITHUB_OUTPUT
-            echo "deploy_prod=false" >> $GITHUB_OUTPUT
+            echo "envs=dev int" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" == release/* ]]; then
-            echo "📦 Release branch → Deploying to QA"
-            echo "deploy_dev=false" >> $GITHUB_OUTPUT
-            echo "deploy_int=false" >> $GITHUB_OUTPUT
-            echo "deploy_qa=true" >> $GITHUB_OUTPUT
-            echo "deploy_prod=false" >> $GITHUB_OUTPUT
+            echo "envs=qa" >> $GITHUB_OUTPUT
           elif [[ "$BRANCH" == "main" ]]; then
-            echo "📦 Main branch → Deploying to PROD"
-            echo "deploy_dev=false" >> $GITHUB_OUTPUT
-            echo "deploy_int=false" >> $GITHUB_OUTPUT
-            echo "deploy_qa=false" >> $GITHUB_OUTPUT
-            echo "deploy_prod=true" >> $GITHUB_OUTPUT
+            echo "envs=prod" >> $GITHUB_OUTPUT
           else
-            echo "deploy_dev=false" >> $GITHUB_OUTPUT
-            echo "deploy_int=false" >> $GITHUB_OUTPUT
-            echo "deploy_qa=false" >> $GITHUB_OUTPUT
-            echo "deploy_prod=false" >> $GITHUB_OUTPUT
+            echo "envs=" >> $GITHUB_OUTPUT
           fi
 
-  build:
-    name: 🔨 Build Environments
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cat VERSION 2>/dev/null || echo "1.0.0")
+          COMMIT=$(git rev-parse --short HEAD)
+          echo "version=${VERSION}-${COMMIT}" >> $GITHUB_OUTPUT
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -169,64 +103,93 @@ jobs:
         working-directory: frontend
         run: bun install --frozen-lockfile || bun install
 
-      - name: Create dist directory
-        run: mkdir -p dist
+      - name: Checkout gh-pages (existing site)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-existing
+        continue-on-error: true
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir -p deploy
+          # Copy existing site if it exists
+          if [ -d "gh-pages-existing" ]; then
+            cp -r gh-pages-existing/* deploy/ 2>/dev/null || true
+            rm -rf gh-pages-existing
+          fi
 
       - name: 🟢 Build DEV
-        if: needs.setup.outputs.deploy_dev == 'true'
+        if: contains(steps.env.outputs.envs, 'dev')
         working-directory: frontend
         run: bun run build
         env:
           VITE_DEMO_MODE: 'true'
           VITE_ENVIRONMENT: 'dev'
-          VITE_APP_VERSION: ${{ needs.setup.outputs.version }}-dev
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}-dev
 
-      - name: Move DEV build
-        if: needs.setup.outputs.deploy_dev == 'true'
-        run: mkdir -p dist/dev && cp -r frontend/dist/* dist/dev/
+      - name: Deploy DEV
+        if: contains(steps.env.outputs.envs, 'dev')
+        run: |
+          rm -rf deploy/dev
+          mkdir -p deploy/dev
+          cp -r frontend/dist/* deploy/dev/
+          echo "✅ DEV environment updated"
 
       - name: 🔵 Build INT
-        if: needs.setup.outputs.deploy_int == 'true'
+        if: contains(steps.env.outputs.envs, 'int')
         working-directory: frontend
         run: bun run build
         env:
           VITE_DEMO_MODE: 'true'
           VITE_ENVIRONMENT: 'int'
-          VITE_APP_VERSION: ${{ needs.setup.outputs.version }}-int
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}-int
 
-      - name: Move INT build
-        if: needs.setup.outputs.deploy_int == 'true'
-        run: mkdir -p dist/int && cp -r frontend/dist/* dist/int/
+      - name: Deploy INT
+        if: contains(steps.env.outputs.envs, 'int')
+        run: |
+          rm -rf deploy/int
+          mkdir -p deploy/int
+          cp -r frontend/dist/* deploy/int/
+          echo "✅ INT environment updated"
 
       - name: 🟡 Build QA
-        if: needs.setup.outputs.deploy_qa == 'true'
+        if: contains(steps.env.outputs.envs, 'qa')
         working-directory: frontend
         run: bun run build
         env:
           VITE_DEMO_MODE: 'true'
           VITE_ENVIRONMENT: 'qa'
-          VITE_APP_VERSION: ${{ needs.setup.outputs.version }}-qa
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}-qa
 
-      - name: Move QA build
-        if: needs.setup.outputs.deploy_qa == 'true'
-        run: mkdir -p dist/qa && cp -r frontend/dist/* dist/qa/
+      - name: Deploy QA
+        if: contains(steps.env.outputs.envs, 'qa')
+        run: |
+          rm -rf deploy/qa
+          mkdir -p deploy/qa
+          cp -r frontend/dist/* deploy/qa/
+          echo "✅ QA environment updated"
 
       - name: 🔴 Build PROD
-        if: needs.setup.outputs.deploy_prod == 'true'
+        if: contains(steps.env.outputs.envs, 'prod')
         working-directory: frontend
         run: bun run build
         env:
           VITE_DEMO_MODE: 'true'
           VITE_ENVIRONMENT: 'prod'
-          VITE_APP_VERSION: ${{ needs.setup.outputs.version }}
+          VITE_APP_VERSION: ${{ steps.version.outputs.version }}
 
-      - name: Move PROD build
-        if: needs.setup.outputs.deploy_prod == 'true'
-        run: mkdir -p dist/prod && cp -r frontend/dist/* dist/prod/
-
-      - name: Create Landing Page
+      - name: Deploy PROD
+        if: contains(steps.env.outputs.envs, 'prod')
         run: |
-          cat > dist/index.html << 'EOF'
+          rm -rf deploy/prod
+          mkdir -p deploy/prod
+          cp -r frontend/dist/* deploy/prod/
+          echo "✅ PROD environment updated"
+
+      - name: Create landing page
+        run: |
+          cat > deploy/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -267,23 +230,13 @@ jobs:
           </body>
           </html>
           EOF
+          touch deploy/.nojekyll
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: 'dist'
-
-  deploy:
-    name: 🚀 Deploy
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          publish_branch: gh-pages
+          keep_files: false
+          commit_message: "Deploy: ${{ steps.env.outputs.envs }} from ${{ github.ref_name }}"
