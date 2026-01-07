@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-150 ease-out">
     <!-- Environment Banner -->
     <div v-if="isDemo && showNavbar" :class="envBannerClass">
       <div class="flex items-center justify-center gap-4 text-sm">
@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import Navbar from './components/Navbar.vue'
+import { Navbar } from '@/components'
 import { isDemoMode } from './services/mockApi'
 
 const route = useRoute()

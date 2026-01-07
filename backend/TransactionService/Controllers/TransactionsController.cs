@@ -206,6 +206,25 @@ public class TransactionsController : ControllerBase
         
         return Ok(categories);
     }
+
+    /// <summary>
+    /// Seed demo transactions for the authenticated user (creates transactions if none exist)
+    /// </summary>
+    [HttpPost("seed")]
+    [ProducesResponseType(typeof(IEnumerable<Transaction>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<Transaction>>> SeedTransactions()
+    {
+        var customerId = GetCustomerIdFromToken();
+        
+        _logger.LogInformation("Seeding transactions for customer {CustomerId}", customerId);
+        
+        var transactions = await _transactionService.SeedTransactionsForCustomerAsync(customerId);
+        
+        // Invalidate cache
+        await InvalidateCustomerCacheAsync(customerId);
+        
+        return Ok(transactions);
+    }
     
     private async Task InvalidateCustomerCacheAsync(string customerId)
     {

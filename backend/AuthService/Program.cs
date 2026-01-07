@@ -8,6 +8,7 @@ using AuthService.Services;
 using Shared.Infrastructure.Middleware;
 using Shared.Infrastructure.HealthChecks;
 using Shared.Infrastructure.RateLimiting;
+using Shared.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,28 +90,25 @@ builder.Services.AddGlobalExceptionHandler();
 builder.Services.AddApiRateLimiting();
 builder.Services.AddServiceHealthChecks<AuthDbContext>("AuthService");
 
-// Configure CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
+// Configure Secure CORS
+builder.Services.AddSecureCors(builder.Configuration);
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
 app.UseExceptionHandler();
+
+// Security middleware - OWASP 2025 compliant
+app.UseApiSecurityHeaders();
+app.UseRequestValidation();
+
 app.UseCorrelationId();
 app.UseRateLimiter();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseCors();
+app.UseSecureCors(app.Environment);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

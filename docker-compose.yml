@@ -1,5 +1,6 @@
-# Transaction Dispute Portal - Docker Compose
-# Usage: docker compose up -d
+# Transaction Dispute Portal - Container Compose
+# Runtime: containerd (via Rancher Desktop) or Docker
+# Usage: nerdctl compose up -d (or docker compose up -d)
 
 services:
   # Redis Cache
@@ -27,7 +28,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Data Source=/data/auth.db
-      - Jwt__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
     volumes:
@@ -53,7 +54,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Data Source=/data/transactions.db
       - ConnectionStrings__Redis=redis:6379
-      - Jwt__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
     volumes:
@@ -83,7 +84,7 @@ services:
       - ConnectionStrings__DefaultConnection=Data Source=/data/disputes.db
       - ConnectionStrings__Redis=redis:6379
       - TransactionService__BaseUrl=http://transaction-service:5001
-      - Jwt__Secret=${JWT_SECRET:-YourSuperSecretKeyThatIsAtLeast32CharactersLong!}
+      - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
     volumes:
@@ -109,7 +110,7 @@ services:
       dockerfile: ApiGateway/Dockerfile
     container_name: api-gateway
     ports:
-      - "5000:5000"
+      - "5050:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ReverseProxy__Clusters__transaction-service__Destinations__destination1__Address=http://transaction-service:5001

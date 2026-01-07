@@ -232,6 +232,85 @@ public class DisputesController : ControllerBase
     }
 
     /// <summary>
+    /// Update dispute description (must belong to authenticated user and be in Pending status)
+    /// </summary>
+    [HttpPut("{id:guid}/description")]
+    [ProducesResponseType(typeof(Dispute), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<Dispute>> UpdateDisputeDescription(Guid id, [FromBody] UpdateDisputeDescriptionRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var customerId = GetCustomerIdFromToken();
+        var existingDispute = await _disputeService.GetDisputeByIdAsync(id);
+        
+        if (existingDispute == null)
+        {
+            return NotFound(new { message = $"Dispute with ID {id} not found" });
+        }
+        
+        if (existingDispute.CustomerId != customerId)
+        {
+            return Forbid();
+        }
+
+        // Only allow editing Pending disputes
+        if (existingDispute.Status != DisputeStatus.Pending)
+        {
+            return BadRequest(new { message = "Only pending disputes can be edited" });
+        }
+
+        var dispute = await _disputeService.UpdateDisputeDescriptionAsync(id, request.Description);
+        
+        // Invalidate cache
+        await InvalidateCustomerCacheAsync(customerId);
+
+        return Ok(dispute);
+    }
+
+    /// <summary>
+    /// Delete a dispute (must belong to authenticated user and be in Pending status)
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteDispute(Guid id)
+    {
+        var customerId = GetCustomerIdFromToken();
+        var existingDispute = await _disputeService.GetDisputeByIdAsync(id);
+        
+        if (existingDispute == null)
+        {
+            return NotFound(new { message = $"Dispute with ID {id} not found" });
+        }
+        
+        if (existingDispute.CustomerId != customerId)
+        {
+            return Forbid();
+        }
+
+        // Only allow deleting Pending disputes
+        if (existingDispute.Status != DisputeStatus.Pending)
+        {
+            return BadRequest(new { message = "Only pending disputes can be deleted" });
+        }
+
+        await _disputeService.DeleteDisputeAsync(id);
+        
+        // Invalidate cache
+        await InvalidateCustomerCacheAsync(customerId);
+        
+        return Ok(new { message = "Dispute deleted successfully" });
+    }
+
+    /// <summary>
     /// Get dispute statistics for authenticated user
     /// </summary>
     [HttpGet("statistics")]

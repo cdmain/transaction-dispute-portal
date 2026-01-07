@@ -127,6 +127,7 @@ export interface DisputeQueryParams {
   toDate?: string
   page?: number
   pageSize?: number
+  searchTerm?: string
 }
 
 // Auth types

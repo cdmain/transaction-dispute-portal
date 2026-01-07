@@ -286,6 +286,12 @@ export const mockTransactionApi = {
   getCategories: async (): Promise<string[]> => {
     await delay(100)
     return [...new Set(mockTransactions.map(t => t.category))]
+  },
+
+  seedTransactions: async (): Promise<Transaction[]> => {
+    await delay(300)
+    // In demo mode, transactions are already seeded
+    return mockTransactions
   }
 }
 
@@ -300,8 +306,23 @@ export const mockDisputeApi = {
       filtered = filtered.filter(d => d.status === params.status)
     }
     
-    if ((params as any)?.searchTerm) {
-      const search = ((params as any).searchTerm as string).toLowerCase()
+    if (params?.category !== undefined) {
+      filtered = filtered.filter(d => d.category === params.category)
+    }
+    
+    if (params?.fromDate) {
+      const fromDate = new Date(params.fromDate)
+      filtered = filtered.filter(d => new Date(d.createdAt) >= fromDate)
+    }
+    
+    if (params?.toDate) {
+      const toDate = new Date(params.toDate)
+      toDate.setHours(23, 59, 59, 999) // End of day
+      filtered = filtered.filter(d => new Date(d.createdAt) <= toDate)
+    }
+    
+    if (params?.searchTerm) {
+      const search = params.searchTerm.toLowerCase()
       filtered = filtered.filter(d => 
         d.reason.toLowerCase().includes(search) ||
         d.merchantName?.toLowerCase().includes(search)
@@ -386,10 +407,51 @@ export const mockDisputeApi = {
     const dispute = mockDisputes.find(d => d.id === id)
     if (!dispute) throw new Error('Dispute not found')
     
+    // Check if dispute can be cancelled
+    if (dispute.status === DisputeStatus.Resolved || dispute.status === DisputeStatus.Rejected) {
+      throw new Error('Cannot cancel a resolved or rejected dispute')
+    }
+    
     dispute.status = DisputeStatus.Cancelled
     dispute.updatedAt = new Date().toISOString()
     dispute.resolvedAt = new Date().toISOString()
     dispute.resolutionNotes = 'Cancelled by customer'
+    
+    // Unmark transaction as disputed so it can be re-disputed
+    const txn = mockTransactions.find((t: { id: string }) => t.id === dispute.transactionId)
+    if (txn) {
+      txn.isDisputed = false
+    }
+  },
+
+  updateDisputeDescription: async (id: string, description: string): Promise<Dispute> => {
+    await delay(300)
+    
+    const dispute = mockDisputes.find(d => d.id === id)
+    if (!dispute) throw new Error('Dispute not found')
+    
+    dispute.description = description
+    dispute.updatedAt = new Date().toISOString()
+    
+    return dispute
+  },
+
+  deleteDispute: async (id: string): Promise<void> => {
+    await delay(300)
+    
+    const index = mockDisputes.findIndex(d => d.id === id)
+    if (index === -1) throw new Error('Dispute not found')
+    
+    const dispute = mockDisputes[index]
+    
+    // Unmark transaction as disputed
+    const txn = mockTransactions.find((t: { id: string }) => t.id === dispute.transactionId)
+    if (txn) {
+      txn.isDisputed = false
+    }
+    
+    // Remove from array
+    mockDisputes.splice(index, 1)
   },
   
   getStatistics: async (): Promise<DisputeStatistics> => {
