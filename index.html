@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Dispute Portal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1e3a5f, #0f2840); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .container { text-align: center; color: white; max-width: 900px; }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .subtitle { opacity: 0.8; margin-bottom: 2rem; }
+    .environments { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+    .env-card { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; text-decoration: none; color: white; transition: all 0.3s; }
+    .env-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    .env-card.dev { border: 2px solid #22c55e; }
+    .env-card.int { border: 2px solid #3b82f6; }
+    .env-card.qa { border: 2px solid #f59e0b; }
+    .env-card.prod { border: 2px solid #ef4444; }
+    .env-name { font-size: 1.25rem; font-weight: 600; }
+    .env-desc { font-size: 0.875rem; opacity: 0.7; }
+    .info { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; margin-top: 2rem; font-size: 0.875rem; }
+    .creds { font-family: monospace; color: #22c55e; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏦 Transaction Dispute Portal</h1>
+    <p class="subtitle">Select an environment</p>
+    <div class="environments">
+      <a href="./dev/" class="env-card dev"><div class="env-name">🟢 DEV</div><div class="env-desc">Development</div></a>
+      <a href="./int/" class="env-card int"><div class="env-name">🔵 INT</div><div class="env-desc">Integration</div></a>
+      <a href="./qa/" class="env-card qa"><div class="env-name">🟡 QA</div><div class="env-desc">Quality Assurance</div></a>
+      <a href="./prod/" class="env-card prod"><div class="env-name">🔴 PROD</div><div class="env-desc">Production</div></a>
+    </div>
+    <div class="info">Demo: <span class="creds">demo@example.com / Demo123!</span></div>
+  </div>
+</body>
+</html>
