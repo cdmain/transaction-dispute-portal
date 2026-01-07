@@ -1,96 +1,57 @@
-/**
- * Dispute Composables
- * 
- * TanStack Query hooks for dispute data.
- * Uses the typed endpoints for API calls.
- */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
-import * as disputeApi from '@/endpoints/disputes'
-import type { DisputeQueryParams, CreateDisputeRequest } from '@/endpoints/disputes'
+import * as api from '@/features/disputes/api/disputesApi'
+import type { DisputeQuery, CreateDispute } from '@/features/disputes/api/disputesApi'
 import { transactionKeys } from '../transactions'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Query Keys
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const disputeKeys = {
   all: ['disputes'] as const,
   lists: () => [...disputeKeys.all, 'list'] as const,
-  list: (params: DisputeQueryParams) => [...disputeKeys.lists(), params] as const,
+  list: (params: DisputeQuery) => [...disputeKeys.lists(), params] as const,
   details: () => [...disputeKeys.all, 'detail'] as const,
   detail: (id: string) => [...disputeKeys.details(), id] as const,
-  statistics: (customerId?: string) => [...disputeKeys.all, 'statistics', customerId] as const,
+  statistics: () => [...disputeKeys.all, 'statistics'] as const,
   byTransaction: (transactionId: string) => [...disputeKeys.all, 'transaction', transactionId] as const,
 }
 
-// Default customer ID for demo
 const DEFAULT_CUSTOMER_ID = 'CUST001'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Filter State
-// ─────────────────────────────────────────────────────────────────────────────
-
-const filters = ref<DisputeQueryParams>({
+const filters = ref<DisputeQuery>({
   customerId: DEFAULT_CUSTOMER_ID,
   page: 1,
   pageSize: 20,
 })
 
 export function useDisputeFilters() {
-  const setFilters = (newFilters: Partial<DisputeQueryParams>) => {
+  const setFilters = (newFilters: Partial<DisputeQuery>) => {
     filters.value = { ...filters.value, ...newFilters }
   }
 
   const resetFilters = () => {
-    filters.value = {
-      customerId: DEFAULT_CUSTOMER_ID,
-      page: 1,
-      pageSize: 20,
-    }
+    filters.value = { customerId: DEFAULT_CUSTOMER_ID, page: 1, pageSize: 20 }
   }
 
-  const nextPage = () => {
-    filters.value.page = (filters.value.page ?? 1) + 1
-  }
+  const nextPage = () => { filters.value.page = (filters.value.page ?? 1) + 1 }
+  const previousPage = () => { if ((filters.value.page ?? 1) > 1) filters.value.page = (filters.value.page ?? 1) - 1 }
 
-  const previousPage = () => {
-    if ((filters.value.page ?? 1) > 1) {
-      filters.value.page = (filters.value.page ?? 1) - 1
-    }
-  }
-
-  return {
-    filters,
-    setFilters,
-    resetFilters,
-    nextPage,
-    previousPage,
-  }
+  return { filters, setFilters, resetFilters, nextPage, previousPage }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Queries
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function useDisputes() {
   const { filters, setFilters, resetFilters, nextPage, previousPage } = useDisputeFilters()
 
   const query = useQuery({
     queryKey: computed(() => disputeKeys.list(filters.value)),
-    queryFn: () => disputeApi.getDisputes(filters.value),
-    staleTime: 30000, // 30 seconds
+    queryFn: () => api.getDisputes(filters.value),
+    staleTime: 30000,
   })
 
-  const pagination = computed(() => {
-    const data = query.data.value
-    return {
-      page: data?.page ?? 1,
-      pageSize: data?.pageSize ?? 20,
-      totalCount: data?.totalCount ?? 0,
-      totalPages: data?.totalPages ?? 0,
-    }
-  })
+  const pagination = computed(() => ({
+    page: query.data.value?.page ?? 1,
+    pageSize: query.data.value?.pageSize ?? 20,
+    totalCount: query.data.value?.totalCount ?? 0,
+    totalPages: query.data.value?.totalPages ?? 0,
+  }))
 
   const hasMore = computed(() => pagination.value.page < pagination.value.totalPages)
 
@@ -111,42 +72,36 @@ export function useDisputes() {
 
 export function useDispute(id: Ref<string> | ComputedRef<string> | string) {
   const disputeId = computed(() => typeof id === 'string' ? id : id.value)
-  
   return useQuery({
     queryKey: computed(() => disputeKeys.detail(disputeId.value)),
-    queryFn: () => disputeApi.getDisputeById(disputeId.value),
+    queryFn: () => api.getDisputeById(disputeId.value),
     enabled: computed(() => !!disputeId.value),
   })
 }
 
-export function useDisputeStatistics(customerId?: string) {
+export function useDisputeStatistics() {
   return useQuery({
-    queryKey: disputeKeys.statistics(customerId),
-    queryFn: () => disputeApi.getStatistics(customerId),
-    staleTime: 60000, // 1 minute
+    queryKey: disputeKeys.statistics(),
+    queryFn: () => api.getStatistics(),
+    staleTime: 60000,
   })
 }
 
 export function useDisputesByTransaction(transactionId: string) {
   return useQuery({
     queryKey: disputeKeys.byTransaction(transactionId),
-    queryFn: () => disputeApi.getDisputesByTransaction(transactionId),
+    queryFn: () => api.getDisputesByTransaction(transactionId),
     enabled: !!transactionId,
   })
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mutations
-// ─────────────────────────────────────────────────────────────────────────────
-
 export function useCreateDispute() {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: (data: CreateDisputeRequest) => disputeApi.createDispute(data),
-    onSuccess: (_, variables) => {
+    mutationFn: (data: CreateDispute) => api.createDispute(data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: disputeKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: disputeKeys.statistics(variables.customerId) })
+      queryClient.invalidateQueries({ queryKey: disputeKeys.statistics() })
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
     },
   })
@@ -154,9 +109,8 @@ export function useCreateDispute() {
 
 export function useCancelDispute() {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: disputeApi.cancelDispute,
+    mutationFn: api.cancelDispute,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: disputeKeys.all })
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
@@ -166,21 +120,16 @@ export function useCancelDispute() {
 
 export function useUpdateDisputeDescription() {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, description }: { id: string; description: string }) => 
-      disputeApi.updateDisputeDescription(id, description),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: disputeKeys.all })
-    },
+    mutationFn: ({ id, description }: { id: string; description: string }) => api.updateDescription(id, description),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: disputeKeys.all }),
   })
 }
 
 export function useDeleteDispute() {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: disputeApi.deleteDispute,
+    mutationFn: api.deleteDispute,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: disputeKeys.all })
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })

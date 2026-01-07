@@ -156,7 +156,7 @@ import { RouterLink } from 'vue-router'
 import { useDisputeStatistics, useDisputes } from '@/composables'
 import { format } from 'date-fns'
 
-const { data: statistics } = useDisputeStatistics('CUST001')
+const { data: statistics } = useDisputeStatistics()
 const { disputes } = useDisputes()
 
 const recentDisputes = computed(() => disputes.value.slice(0, 5))

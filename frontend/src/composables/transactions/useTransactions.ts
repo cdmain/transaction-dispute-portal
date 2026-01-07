@@ -1,94 +1,55 @@
-/**
- * Transaction Composables
- * 
- * TanStack Query hooks for transaction data.
- * Uses the typed endpoints for API calls.
- */
 import { useQuery } from '@tanstack/vue-query'
 import { ref, computed } from 'vue'
-import * as transactionApi from '@/endpoints/transactions'
-import type { TransactionQueryParams } from '@/endpoints/transactions'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Query Keys
-// ─────────────────────────────────────────────────────────────────────────────
+import * as api from '@/features/transactions/api/transactionsApi'
+import type { TransactionQuery } from '@/features/transactions/api/transactionsApi'
 
 export const transactionKeys = {
   all: ['transactions'] as const,
   lists: () => [...transactionKeys.all, 'list'] as const,
-  list: (params: TransactionQueryParams) => [...transactionKeys.lists(), params] as const,
+  list: (params: TransactionQuery) => [...transactionKeys.lists(), params] as const,
   details: () => [...transactionKeys.all, 'detail'] as const,
   detail: (id: string) => [...transactionKeys.details(), id] as const,
   categories: () => [...transactionKeys.all, 'categories'] as const,
 }
 
-// Default customer ID for demo
 const DEFAULT_CUSTOMER_ID = 'CUST001'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Filter State
-// ─────────────────────────────────────────────────────────────────────────────
-
-const filters = ref<TransactionQueryParams>({
+const filters = ref<TransactionQuery>({
   customerId: DEFAULT_CUSTOMER_ID,
   page: 1,
   pageSize: 20,
 })
 
 export function useTransactionFilters() {
-  const setFilters = (newFilters: Partial<TransactionQueryParams>) => {
+  const setFilters = (newFilters: Partial<TransactionQuery>) => {
     filters.value = { ...filters.value, ...newFilters }
   }
 
   const resetFilters = () => {
-    filters.value = {
-      customerId: DEFAULT_CUSTOMER_ID,
-      page: 1,
-      pageSize: 20,
-    }
+    filters.value = { customerId: DEFAULT_CUSTOMER_ID, page: 1, pageSize: 20 }
   }
 
-  const nextPage = () => {
-    filters.value.page = (filters.value.page ?? 1) + 1
-  }
+  const nextPage = () => { filters.value.page = (filters.value.page ?? 1) + 1 }
+  const previousPage = () => { if ((filters.value.page ?? 1) > 1) filters.value.page = (filters.value.page ?? 1) - 1 }
 
-  const previousPage = () => {
-    if ((filters.value.page ?? 1) > 1) {
-      filters.value.page = (filters.value.page ?? 1) - 1
-    }
-  }
-
-  return {
-    filters,
-    setFilters,
-    resetFilters,
-    nextPage,
-    previousPage,
-  }
+  return { filters, setFilters, resetFilters, nextPage, previousPage }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Queries
-// ─────────────────────────────────────────────────────────────────────────────
 
 export function useTransactions() {
   const { filters, setFilters, resetFilters, nextPage, previousPage } = useTransactionFilters()
 
   const query = useQuery({
     queryKey: computed(() => transactionKeys.list(filters.value)),
-    queryFn: () => transactionApi.getTransactions(filters.value),
-    staleTime: 30000, // 30 seconds
+    queryFn: () => api.getTransactions(filters.value),
+    staleTime: 30000,
   })
 
-  const pagination = computed(() => {
-    const data = query.data.value
-    return {
-      page: data?.page ?? 1,
-      pageSize: data?.pageSize ?? 20,
-      totalCount: data?.totalCount ?? 0,
-      totalPages: data?.totalPages ?? 0,
-    }
-  })
+  const pagination = computed(() => ({
+    page: query.data.value?.page ?? 1,
+    pageSize: query.data.value?.pageSize ?? 20,
+    totalCount: query.data.value?.totalCount ?? 0,
+    totalPages: query.data.value?.totalPages ?? 0,
+  }))
 
   const hasMore = computed(() => pagination.value.page < pagination.value.totalPages)
 
@@ -110,7 +71,7 @@ export function useTransactions() {
 export function useTransaction(id: string) {
   return useQuery({
     queryKey: transactionKeys.detail(id),
-    queryFn: () => transactionApi.getTransactionById(id),
+    queryFn: () => api.getTransactionById(id),
     enabled: !!id,
   })
 }
@@ -118,7 +79,7 @@ export function useTransaction(id: string) {
 export function useTransactionCategories() {
   return useQuery({
     queryKey: transactionKeys.categories(),
-    queryFn: transactionApi.getCategories,
-    staleTime: 300000, // 5 minutes
+    queryFn: api.getCategories,
+    staleTime: 300000,
   })
 }

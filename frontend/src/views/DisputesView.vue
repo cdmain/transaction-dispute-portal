@@ -170,7 +170,7 @@ const {
   refetch
 } = useDisputes()
 
-const { data: statistics } = useDisputeStatistics('CUST001')
+const { data: statistics } = useDisputeStatistics()
 const cancelDisputeMutation = useCancelDispute()
 const updateDescriptionMutation = useUpdateDisputeDescription()
 const deleteDisputeMutation = useDeleteDispute()
