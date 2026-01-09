@@ -2,6 +2,11 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
+# Optional: Corporate CA certificates (for SSL inspection proxies)
+# Copy ca-certificates.crt to backend/ folder if behind corporate proxy
+COPY ca-certificate[s].crt /usr/local/share/ca-certificates/corporate-ca.crt
+RUN update-ca-certificates 2>/dev/null || true
+
 # Copy project files for restore
 COPY TransactionService/*.csproj ./TransactionService/
 COPY Shared.Infrastructure/*.csproj ./Shared.Infrastructure/

@@ -21,6 +21,17 @@ nerdctl compose logs -f
 nerdctl compose down
 ```
 
+## Corporate Network / SSL Inspection
+
+If you're behind a corporate proxy with SSL inspection, run this **before** building:
+
+```bash
+./setup-corporate-ca.sh
+nerdctl compose up -d --build
+```
+
+This exports your system's CA certificates so Docker can reach package registries (NuGet, npm, etc.).
+
 ## Access
 
 | Service | URL |
