@@ -8,7 +8,20 @@
 - [Rancher Desktop](https://rancherdesktop.io/) installed with **containerd** runtime selected
 - OR Docker Desktop with Docker daemon running (substitute `nerdctl` with `docker`)
 
-## Quick Start
+## 🚀 Quick Start (Recommended)
+
+The easiest way to start the app:
+
+```bash
+./start.sh
+```
+
+This will:
+1. Build and start all containers
+2. Display the access URLs
+3. **Automatically open http://localhost:3000 in your browser**
+
+## Manual Start
 
 ```bash
 # Build and start all services
@@ -27,17 +40,20 @@ If you're behind a corporate proxy with SSL inspection, run this **before** buil
 
 ```bash
 ./setup-corporate-ca.sh
-nerdctl compose up -d --build
+./start.sh
 ```
 
 This exports your system's CA certificates so Docker can reach package registries (NuGet, npm, etc.).
 
-## Access
+## 🌐 Access URLs
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| API Gateway | http://localhost:5050 |
+Once running, open these URLs in your browser:
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend** | **http://localhost:3000** | Main app - start here! |
+| API Gateway | http://localhost:5050 | Backend API |
+| API Docs | http://localhost:5050/swagger | Swagger UI |
 
 ## Demo Credentials
 
