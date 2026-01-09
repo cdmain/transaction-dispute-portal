@@ -25,37 +25,37 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel 
-              class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
+              class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all"
             >
-              <DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900">
+              <DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900 dark:text-white">
                 File a Dispute
               </DialogTitle>
 
-              <div v-if="transaction" class="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div v-if="transaction" class="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div class="flex justify-between items-start">
                   <div>
-                    <p class="text-sm font-medium text-gray-900">{{ transaction.merchantName }}</p>
-                    <p class="text-sm text-gray-500">{{ transaction.description }}</p>
-                    <p class="text-xs text-gray-400 mt-1">Ref: {{ transaction.reference }}</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">{{ transaction.merchantName }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ transaction.description }}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Ref: {{ transaction.reference }}</p>
                   </div>
                   <div class="text-right">
-                    <p class="text-lg font-semibold text-gray-900">
+                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
                       {{ formatAmount(transaction.amount) }}
                     </p>
-                    <p class="text-xs text-gray-500">{{ transaction.currency }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ transaction.currency }}</p>
                   </div>
                 </div>
               </div>
 
               <form @submit.prevent="handleSubmit" class="mt-6 space-y-4">
                 <div>
-                  <label for="category" class="block text-sm font-medium text-gray-700">
+                  <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Dispute Category *
                   </label>
                   <select
                     id="category"
                     v-model="form.category"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                     required
                   >
                     <option :value="0">Unauthorized Transaction</option>
@@ -71,7 +71,7 @@
                 </div>
 
                 <div>
-                  <label for="reason" class="block text-sm font-medium text-gray-700">
+                  <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Brief Reason *
                   </label>
                   <input
@@ -79,7 +79,7 @@
                     v-model="form.reason"
                     type="text"
                     maxlength="200"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                     placeholder="e.g., I did not authorize this transaction"
                     required
                   />
@@ -87,7 +87,7 @@
                 </div>
 
                 <div>
-                  <label for="description" class="block text-sm font-medium text-gray-700">
+                  <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Detailed Description *
                   </label>
                   <textarea
@@ -95,7 +95,7 @@
                     v-model="form.description"
                     rows="4"
                     maxlength="2000"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                     placeholder="Please provide as much detail as possible about why you are disputing this transaction..."
                     required
                   />
@@ -103,12 +103,12 @@
                 </div>
 
                 <div>
-                  <label for="amount" class="block text-sm font-medium text-gray-700">
+                  <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Disputed Amount *
                   </label>
                   <div class="mt-1 relative rounded-md shadow-sm">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span class="text-gray-500 sm:text-sm">R</span>
+                      <span class="text-gray-500 dark:text-gray-400 sm:text-sm">R</span>
                     </div>
                     <input
                       id="amount"
@@ -116,11 +116,11 @@
                       type="number"
                       step="0.01"
                       min="0.01"
-                      class="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                      class="block w-full pl-7 pr-12 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                       required
                     />
                     <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                      <span class="text-gray-500 sm:text-sm">ZAR</span>
+                      <span class="text-gray-500 dark:text-gray-400 sm:text-sm">ZAR</span>
                     </div>
                   </div>
                   <p v-if="errors.disputedAmount" class="mt-1 text-sm text-red-600">{{ errors.disputedAmount }}</p>
@@ -130,7 +130,7 @@
                   <button
                     type="button"
                     @click="closeModal"
-                    class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    class="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                   >
                     Cancel
                   </button>
