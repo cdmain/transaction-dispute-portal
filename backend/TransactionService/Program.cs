@@ -51,10 +51,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configure SQLite
+// Configure PostgreSQL
 builder.Services.AddDbContext<TransactionDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Data Source=transactions.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Host=localhost;Database=disputeportal;Username=disputeportal;Password=DisputePortal2024!"));
 
 // Configure Redis caching (optional - falls back to in-memory if not available)
 var redisConnection = builder.Configuration.GetConnectionString("Redis");

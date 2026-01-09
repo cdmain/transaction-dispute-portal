@@ -3,6 +3,27 @@
 # Usage: nerdctl compose up -d (or docker compose up -d)
 
 services:
+  # PostgreSQL Database (Production-grade)
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: disputeportal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-DisputePortal2024!}
+      POSTGRES_DB: disputeportal
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - dispute-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U disputeportal -d disputeportal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis Cache
   redis:
     image: redis:7-alpine
@@ -27,12 +48,13 @@ services:
       - "5003:5003"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Data Source=/data/auth.db
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!}
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
-    volumes:
-      - auth-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - dispute-network
     healthcheck:
@@ -52,14 +74,14 @@ services:
       - "5001:5001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Data Source=/data/transactions.db
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!}
       - ConnectionStrings__Redis=redis:6379
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
-    volumes:
-      - transaction-data:/data
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     networks:
@@ -81,15 +103,15 @@ services:
       - "5002:5002"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Data Source=/data/disputes.db
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!}
       - ConnectionStrings__Redis=redis:6379
       - TransactionService__BaseUrl=http://transaction-service:5001
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
-    volumes:
-      - dispute-data:/data
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
       transaction-service:
@@ -149,6 +171,4 @@ networks:
       com.docker.network.bridge.enable_ip_masquerade: "true"
 
 volumes:
-  auth-data:
-  transaction-data:
-  dispute-data:
+  postgres-data:

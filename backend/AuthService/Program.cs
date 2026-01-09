@@ -51,10 +51,10 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configure SQLite
+// Configure PostgreSQL
 builder.Services.AddDbContext<AuthDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Data Source=auth.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Host=localhost;Database=disputeportal;Username=disputeportal;Password=DisputePortal2024!"));
 
 // Configure JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"] 
