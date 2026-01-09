@@ -48,7 +48,7 @@ services:
       - "5003:5003"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!};Minimum Pool Size=5;Maximum Pool Size=20;Connection Idle Lifetime=300;Connection Pruning Interval=10
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
       - Jwt__Audience=DisputePortalUsers
@@ -74,7 +74,7 @@ services:
       - "5001:5001"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!};Minimum Pool Size=5;Maximum Pool Size=20;Connection Idle Lifetime=300;Connection Pruning Interval=10
       - ConnectionStrings__Redis=redis:6379
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
       - Jwt__Issuer=DisputePortal
@@ -103,7 +103,7 @@ services:
       - "5002:5002"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=disputeportal;Username=disputeportal;Password=${POSTGRES_PASSWORD:-DisputePortal2024!};Minimum Pool Size=5;Maximum Pool Size=20;Connection Idle Lifetime=300;Connection Pruning Interval=10
       - ConnectionStrings__Redis=redis:6379
       - TransactionService__BaseUrl=http://transaction-service:5001
       - Jwt__Secret=${JWT_SECRET:-your-super-secret-key-change-this-in-production-min-32-chars}
