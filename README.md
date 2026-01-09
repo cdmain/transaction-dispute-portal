@@ -14,12 +14,29 @@ A microservice application for managing financial transaction disputes.
 > Uses **containerd** via [Rancher Desktop](https://rancherdesktop.io/). If using Docker, replace `nerdctl` with `docker`.
 
 ```bash
+# Start the app
+./start.sh
+
+# Or manually
 nerdctl compose up -d --build
 ```
 
-Open http://localhost:3000
+### 🌐 Access the App
 
-**Demo:** `demo@example.com` / `Demo123!`
+| Service | URL |
+|---------|-----|
+| **Frontend** | **http://localhost:3000** |
+| API Gateway | http://localhost:5050 |
+| API Docs | http://localhost:5050/swagger |
+
+### Demo Credentials
+📧 `demo@example.com` / `Demo123!`
+
+### Stop the App
+
+```bash
+nerdctl compose down
+```
 
 See [DOCKER-BUILD-RUN.md](DOCKER-BUILD-RUN.md) for full setup instructions.
 
